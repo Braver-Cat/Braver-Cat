@@ -13,8 +13,6 @@ class BRATS2013Dataset(Dataset):
 
   def __getitem__(self, idx):
     
-    print(f"self.obs_list[idx]: {self.obs_list[idx]}")
-
     img_np = np.load(f"{self.obs_list[idx]}/img.npy")
     label_np = np.load(f"{self.obs_list[idx]}/label.npy")
 
@@ -28,6 +26,3 @@ class BRATS2013Dataset(Dataset):
       "slice_id": slice_id,
       "full_path": self.obs_list[idx]
     }
-
-
-
