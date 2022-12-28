@@ -5,24 +5,27 @@ import numpy as np
 
 class BRATS2013Dataset(Dataset):
 
-  def __init__(self, obs_list):
+  def __init__(self, obs_list, stage):
     self.obs_list = obs_list
+    self.stage = stage
 
   def __len__(self):
     return len(self.obs_list)
 
   def __getitem__(self, idx):
     
-    img_np = np.load(f"{self.obs_list[idx]}/img.npy")
-    label_np = np.load(f"{self.obs_list[idx]}/label.npy")
+    img = torch.tensor(np.load(f"{self.obs_list[idx]}/img.npy"))
+    label = torch.tensor(np.load(f"{self.obs_list[idx]}/label.npy"))
 
-    observation_id = self.obs_list[idx].split("/")[-1].split("_")[0]
-    slice_id = self.obs_list[idx].split("/")[-1].split("_")[1]
+    obs_folder_name = self.obs_list[idx].split("/")[-1].split("_")
+    obs_id = obs_folder_name[0]
+    slice_id = obs_folder_name[1]
 
     return {
-      "img": img_np,
-      "label": label_np,
-      "observation_id": observation_id,
+      "img": img,
+      "label": label,
+      "obs_id": obs_id,
       "slice_id": slice_id,
-      "full_path": self.obs_list[idx]
+      "full_path": self.obs_list[idx],
+      "stage": self.stage
     }
