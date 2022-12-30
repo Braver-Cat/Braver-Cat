@@ -132,6 +132,6 @@ dmypy.json
 
 data/*
 !data/*.txt
-!data/*.json
+!data/*summary_statistics.json
 
 resources/
