@@ -18,10 +18,11 @@ class BRATS2013DatasetPatch(Dataset):
     self.patch_column_name = f"patch_{self.patch_size}_x_{self.patch_size}_img_path"
     self.label_column_name = "patch_label"
 
+    self.stage = stage
+
     self.load_in_memory = load_in_memory
     self.data, self.labels = self._load_data_in_memory()
 
-    self.stage = stage
 
   def __len__(self):
     return len(self.patch_df.index)
@@ -56,7 +57,7 @@ class BRATS2013DatasetPatch(Dataset):
 
       for _, row in tqdm(
         self.patch_df.iterrows(), colour="#a24fba", total=self.__len__(),
-        desc="Dataset loading into memory progress"
+        desc=f"Loading {self.stage.ljust(5)} dataset in memory"
       ):
         
         patch = np.load(f"{row[self.patch_column_name]}.npy")

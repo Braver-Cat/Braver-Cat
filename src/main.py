@@ -60,6 +60,14 @@ def main():
     patch_df_path=dataset_train_path, patch_size=parsed_args.patch_size, 
     load_in_memory=parsed_args.load_data_in_memory, stage="train"
   )
+  dataset_val = BRATS2013DatasetPatch(
+    patch_df_path=dataset_val_path, patch_size=parsed_args.patch_size, 
+    load_in_memory=parsed_args.load_data_in_memory, stage="val"
+  )
+  dataset_test = BRATS2013DatasetPatch(
+    patch_df_path=dataset_test_path, patch_size=parsed_args.patch_size, 
+    load_in_memory=parsed_args.load_data_in_memory, stage="test"
+  )
 
 
 
