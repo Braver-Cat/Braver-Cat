@@ -16,7 +16,7 @@ class BRATS2013DatasetPatch(Dataset):
     self.patch_df = pd.read_json(patch_df_path)
     self.patch_size = patch_size
     self.patch_column_name = f"patch_{self.patch_size}_x_{self.patch_size}_img_path"
-    self.label_column_name = "patch_label"
+    self.label_column_name = "patch_label_one_hot"
 
     self.stage = stage
 
@@ -38,11 +38,13 @@ class BRATS2013DatasetPatch(Dataset):
       patch = np.load(
         f"{self.patch_df.iloc[idx][self.patch_column_name]}.npy"
       )
-      patch_label = self.patch_df.iloc[idx]["patch_label"]
+      patch_label = self.patch_df.iloc[idx][self.label_column_name]
+
+    # print("PATCH LABEL", torch.tensor(patch_label))
 
     return {
       "patch": patch,
-      "patch_label": patch_label
+      "patch_label": torch.tensor(patch_label)
     }
   
   def _load_data_in_memory(self):
