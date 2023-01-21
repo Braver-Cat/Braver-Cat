@@ -20,6 +20,10 @@ def parse_cli_args():
     type=str, required=True,
     help="Size of the patch to center around the pixel that must be classified for the segmentation"
   )
+  arg_parser.add_argument(
+    "-l", "--load-data-in-memory", action="store_true", dest="load_data_in_memory",
+    help="Whether to load the entire dataset in memory, rather than loading batch elements when needed in the forward pass"
+  )
 
   parsed_args = arg_parser.parse_args()
 
@@ -53,12 +57,10 @@ def main():
   dataset_test_path = f"{parsed_args.dataset_df_path}/test_labels_df.json"
 
   dataset_train = BRATS2013DatasetPatch(
-    patch_df_path=dataset_train_path, patch_size= parsed_args.patch_size, 
-    stage="train"
+    patch_df_path=dataset_train_path, patch_size=parsed_args.patch_size, 
+    load_in_memory=parsed_args.load_data_in_memory, stage="train"
   )
 
-  for x in tqdm(dataset_train):
-    pass
 
 
 
