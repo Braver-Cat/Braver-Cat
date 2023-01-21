@@ -6,6 +6,10 @@ from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 
+from TwoPathCNN import TwoPathCNN
+
+import torch
+
 def parse_cli_args():
   
   arg_parser = argparse.ArgumentParser()
@@ -50,9 +54,9 @@ def check_patch_size_consistency(patch_size, dataset_df_path):
   return True
 
 def get_datasets(parsed_args):
-  dataset_train_path = f"{parsed_args.dataset_df_path}/train_labels_df.json"
-  dataset_val_path = f"{parsed_args.dataset_df_path}/val_labels_df.json"
-  dataset_test_path = f"{parsed_args.dataset_df_path}/test_labels_df.json"
+  dataset_train_path = f"{parsed_args.dataset_df_path}/train_labels_df_one_hot.json"
+  dataset_val_path = f"{parsed_args.dataset_df_path}/val_labels_df_one_hot.json"
+  dataset_test_path = f"{parsed_args.dataset_df_path}/test_labels_df_one_hot.json"
 
   dataset_train = BRATS2013DatasetPatch(
     patch_df_path=dataset_train_path, patch_size=parsed_args.patch_size, 
@@ -102,6 +106,21 @@ def main():
   dl_train, dl_val, dl_test = get_dataloaders(
     dataset_train, dataset_val, dataset_test, parsed_args
   )
+
+  model = TwoPathCNN(num_input_channels=4)
+  x = torch.randint(10, 99, (16, 4, 33, 33)).float()
+
+  model(x)
+
+  
+  
+  
+  
+  # for x in tqdm(iter(dl_train), total=len(dl_train)):
+  #   print(x["patch"].shape)
+  #   print(x["patch_label"].shape)
+  #   print(x["patch_label"])
+  #   return
 
 
 
