@@ -9,7 +9,9 @@ from torch.utils.data import DataLoader
 from TwoPathCNN import TwoPathCNN
 from InputCascadeCNN import InputCascadeCNN
 
-import torch
+from InputCascadeCNNModelTrainer import InputCascadeCNNModelTrainer
+
+import torch.optim 
 
 DEFAULT_NUM_INPUT_CHANNELS = 4
 DEFAULT_NUM_CLASSES = 6
@@ -44,7 +46,7 @@ def parse_cli_args():
   arg_parser.add_argument(
     "--cascade-type", action="store", dest="cascade_type", type=str, 
     required=True, choices=["input", "local", "mfc"], 
-    help="The kind of local and global concatenation to use.\nPossible values: \"input\", \"local\", \"mfc\"\nSee paper for more information https://arxiv.org/pdf/1505.03540.pdf"
+    help="The kind of local and global concatenation to use.\nSee paper for more information https://arxiv.org/pdf/1505.03540.pdf"
   )
   arg_parser.add_argument(
     "--num-input-channels", action="store", dest="num_input_channels",
@@ -54,7 +56,47 @@ def parse_cli_args():
   arg_parser.add_argument(
     "--num-classes", action="store", dest="num_classes",
     type=int, required=False, default=DEFAULT_NUM_CLASSES,
-    help="Number of channels in the input image.\nDefaults to 4, which corresponds to the four modalities of MRI."
+    help="Number of channels in the input image.\nDefaults to 6, which corresponds to the number of classes considered in the original paper."
+  )
+  arg_parser.add_argument(
+    "--optimizer", action="store", dest="optimizer_name", type=str, 
+    choices=["SGD"], default="SGD", required=False,
+    help="What optimizer to use during training.\nDefaults to SGD, as per paper setup\nSee paper for more information https://arxiv.org/pdf/1505.03540.pdf"
+  )
+  arg_parser.add_argument(
+    "--momentum", action="store", dest="momentum", type=float, 
+    default="0.7", required=False, 
+    help="What momentum to use during training\nDefaults to 0.7, as per paper setup"
+  )
+  arg_parser.add_argument(
+    "--learning-rate", action="store", dest="learning_rate", type=float, 
+    default=0.005, required=False,
+    help="What learning rate to use during training.\nDefaults to 0.005, as per paper setup\nPlease note that learning rate will be updated by the scheduler, if one is selected."
+  )
+  arg_parser.add_argument(
+    "--learning-rate-scheduler-decay-factor", action="store", 
+    dest="learning_rate_decay_factor", type=float, default=0.1, required=False, 
+    help="What learning rate decay factor to use during training via the learning rate scheduler.\nDefaults to 0.1, as per paper setup"
+  )
+  arg_parser.add_argument(
+    "--learning-rate-scheduler-decay-step-size", action="store", 
+    dest="learning_rate_decay_step_size", type=int, default=1, required=False, 
+    help="What learning rate decay factor to use during training via the learning rate scheduler.\nDefaults to 1, as per paper setup"
+  )
+  arg_parser.add_argument(
+    "--num-batches", action="store", dest="num_batches",
+    type=int, required=False, default=-1,
+    help="Sets the number of batches to train on.\nUseful in debug.\nDefaults to -1, which ignores the limit."
+  )
+  arg_parser.add_argument(
+    "--elastic-net-delta-1", action="store", 
+    dest="delta_1", type=float, required=True, 
+    help="Delta_1 value of elastic-net regularization"
+  )
+  arg_parser.add_argument(
+    "--elastic-net-delta-2", action="store", 
+    dest="delta_2", type=float, required=True, 
+    help="Delta_2 value of elastic-net regularization"
   )
 
   parsed_args = arg_parser.parse_args()
@@ -115,7 +157,43 @@ def get_model(cascade_type, num_input_channels, num_classes):
       num_input_channels=num_input_channels, 
       num_classes=num_classes
     )
+  
+def get_model_trainer(
+    model, optimizer, learning_rate_scheduler, batch_size, limit_num_batches,
+    dl_train, dl_val, dl_test, delta_1, delta_2
+  ):
 
+  if model.cascade_type == "input":
+    
+    return InputCascadeCNNModelTrainer(
+      model=model,
+      optimizer=optimizer, 
+      learning_rate_scheduler=learning_rate_scheduler,
+      batch_size=batch_size,
+      dl_train=dl_train, 
+      dl_val=dl_val, 
+      dl_test=dl_test,
+      delta_1=delta_1,
+      delta_2=delta_2
+    )
+  
+def get_optimizer(
+  model, optimizer_name, learning_rate, learning_rate_decay_factor, 
+  learning_rate_decay_step_size, momentum
+):
+  
+  if optimizer_name == "SGD":
+
+    optimizer = torch.optim.SGD(
+      params=model.parameters(), lr=learning_rate, momentum=momentum
+    )
+
+    learning_rate_scheduler = torch.optim.lr_scheduler.StepLR(
+      optimizer=optimizer, step_size=learning_rate_decay_step_size,
+      gamma=learning_rate_decay_factor
+    )
+
+    return optimizer, learning_rate_scheduler
 
 
 def main():
@@ -140,6 +218,26 @@ def main():
     num_input_channels=parsed_args.num_input_channels, 
     num_classes=parsed_args.num_classes
   )
+
+  optimizer, learning_rate_scheduler = get_optimizer(
+    model=model, 
+    optimizer_name=parsed_args.optimizer_name,
+    learning_rate=parsed_args.learning_rate,
+    learning_rate_decay_factor=parsed_args.learning_rate_decay_factor,
+    learning_rate_decay_step_size=parsed_args.learning_rate_decay_step_size,
+    momentum=parsed_args.momentum, 
+  )
+
+  model_trainer = get_model_trainer(
+    model=model,
+    optimizer=optimizer, learning_rate_scheduler=learning_rate_scheduler,
+    batch_size=parsed_args.batch_size, 
+    limit_num_batches=parsed_args.num_batches,
+    dl_train=dl_train, dl_val=dl_val, dl_test=dl_test,
+    delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2
+  )
+
+
 
 
 
