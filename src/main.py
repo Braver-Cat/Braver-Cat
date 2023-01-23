@@ -7,6 +7,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 
 from TwoPathCNN import TwoPathCNN
+from InputCascadeCNN import InputCascadeCNN
 
 import torch
 
@@ -107,10 +108,14 @@ def main():
     dataset_train, dataset_val, dataset_test, parsed_args
   )
 
-  model = TwoPathCNN(num_input_channels=4, num_classes=6)
-  x = torch.randint(10, 99, (16, 4, 33, 33)).float()
+  # model = TwoPathCNN(num_input_channels=4, num_classes=6)
+  # x = torch.randint(10, 99, (16, 4, 33, 33)).float()
 
-  model(x)
+  model = InputCascadeCNN(num_input_channels=4, num_classes=6)
+  
+  x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
+  x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
+  model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
 
   
   
