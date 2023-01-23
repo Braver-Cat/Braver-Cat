@@ -18,6 +18,8 @@ class InputCascadeCNNModelTrainer():
     self.delta_1 = delta_1
     self.delta_2 = delta_2
 
+    
+
 
     # TODO 
     # Elastic-net regularization 
