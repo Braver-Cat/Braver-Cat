@@ -100,7 +100,7 @@ class TwoPathCNN(nn.Module):
     # print(x_local_path.shape)
 
     x_local_path = self.local_pool_1(x_local_path)
-    print(x_local_path.shape)
+    # print(x_local_path.shape)
 
     ## END conv 1
 
@@ -118,7 +118,7 @@ class TwoPathCNN(nn.Module):
     # print(x_maxout_units.shape)
 
     x_global_path = x_maxout_units.amax(dim=0)
-    print(x_global_path.shape)
+    # print(x_global_path.shape)
 
     ## END conv 0
     
@@ -129,10 +129,10 @@ class TwoPathCNN(nn.Module):
     x_concat = torch.concat((x_local_path, x_global_path), dim=1)
     
     x_concat = self.concat_conv_0(x_concat)
-    print(x_concat.shape)
+    # print(x_concat.shape)
 
     x_concat = nn.functional.softmax(x_concat, dim=1)
-    print(x_concat.shape)
+    # print(x_concat.shape)
     
     ### END concatenated path
 
