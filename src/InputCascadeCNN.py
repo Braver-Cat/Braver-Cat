@@ -7,6 +7,8 @@ class InputCascadeCNN(nn.Module):
   def __init__(self, num_input_channels, num_classes):
     
     super().__init__()
+    self.cascade_type = "input"
+    
     self.num_input_channels = num_input_channels
     self.num_classes = num_classes
 
