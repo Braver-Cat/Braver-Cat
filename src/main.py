@@ -107,7 +107,7 @@ def main():
     dataset_train, dataset_val, dataset_test, parsed_args
   )
 
-  model = TwoPathCNN(num_input_channels=4)
+  model = TwoPathCNN(num_input_channels=4, num_classes=6)
   x = torch.randint(10, 99, (16, 4, 33, 33)).float()
 
   model(x)

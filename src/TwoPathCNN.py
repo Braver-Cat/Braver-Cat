@@ -2,11 +2,12 @@ import torch
 from torch import nn
 
 class TwoPathCNN(nn.Module):
-  def __init__(self, num_input_channels):
+  def __init__(self, num_input_channels, num_classes):
     
     super().__init__()
 
     self.num_input_channels = num_input_channels
+    self.num_classes = num_classes
 
     ### BEGIN local path, conv_0 block
 
@@ -38,6 +39,28 @@ class TwoPathCNN(nn.Module):
 
     ### END local path, conv_1 block
     
+    ### BEGIN global path, conv_0 block
+    
+    self.global_conv_0_maxout_unit_0 = nn.Conv2d(
+      in_channels=self.num_input_channels, kernel_size=13, 
+      out_channels=160
+    )
+
+    self.global_conv_0_maxout_unit_1 = nn.Conv2d(
+      in_channels=self.num_input_channels, kernel_size=13, 
+      out_channels=160
+    )
+
+    ### END global path, conv_0 block
+
+    ### BEGIN concat path, conv_0 block
+    
+    self.concat_conv_0 = nn.Conv2d(
+      in_channels=224, out_channels=self.num_classes, kernel_size=21
+    )
+    
+    ### END concat path, conv_0 block
+    
     
 
   def forward(self, x):
@@ -50,41 +73,67 @@ class TwoPathCNN(nn.Module):
     ## BEGIN conv 0
 
     x_maxout_unit_0 = self.local_conv_0_maxout_unit_0(x_local_path)
-    print(x_maxout_unit_0.shape)
+    # print(x_maxout_unit_0.shape)
     x_maxout_unit_1 = self.local_conv_0_maxout_unit_1(x_local_path)
-    print(x_maxout_unit_1.shape)
+    # print(x_maxout_unit_1.shape)
     x_maxout_units = torch.stack((x_maxout_unit_0, x_maxout_unit_1), dim=0)
-    print(x_maxout_units.shape)
+    # print(x_maxout_units.shape)
 
     x_local_path = x_maxout_units.amax(dim=0)
-    print(x_local_path.shape)
+    # print(x_local_path.shape)
 
     x_local_path = self.local_pool_0(x_local_path)
-    print(x_local_path.shape)
+    # print(x_local_path.shape)
 
     ## END conv 0
 
     ## BEGIN conv 1
 
     x_maxout_unit_0 = self.local_conv_1_maxout_unit_0(x_local_path)
-    print(x_maxout_unit_0.shape)
+    # print(x_maxout_unit_0.shape)
     x_maxout_unit_1 = self.local_conv_1_maxout_unit_1(x_local_path)
-    print(x_maxout_unit_1.shape)
+    # print(x_maxout_unit_1.shape)
     x_maxout_units = torch.stack((x_maxout_unit_0, x_maxout_unit_1), dim=0)
-    print(x_maxout_units.shape)
+    # print(x_maxout_units.shape)
 
     x_local_path = x_maxout_units.amax(dim=0)
-    print(x_local_path.shape)
+    # print(x_local_path.shape)
 
     x_local_path = self.local_pool_1(x_local_path)
     print(x_local_path.shape)
 
     ## END conv 1
 
-
-
     ### END local path
+    
+    ### BEGIN global path
+    
+    ## BEGIN conv 0
+    
+    x_maxout_unit_0 = self.global_conv_0_maxout_unit_0(x_global_path)
+    # print(x_maxout_unit_0.shape)
+    x_maxout_unit_1 = self.global_conv_0_maxout_unit_1(x_global_path)
+    # print(x_maxout_unit_1.shape)
+    x_maxout_units = torch.stack((x_maxout_unit_0, x_maxout_unit_1), dim=0)
+    # print(x_maxout_units.shape)
 
+    x_global_path = x_maxout_units.amax(dim=0)
+    print(x_global_path.shape)
 
+    ## END conv 0
+    
+    ### END global path
 
-    return x
+    ### BEGIN concatenated path
+    
+    x_concat = torch.concat((x_local_path, x_global_path), dim=1)
+    
+    x_concat = self.concat_conv_0(x_concat)
+    print(x_concat.shape)
+
+    x_concat = nn.functional.softmax(x_concat, dim=1)
+    print(x_concat.shape)
+    
+    ### END concatenated path
+
+    return x_concat
