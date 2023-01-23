@@ -11,6 +11,9 @@ from InputCascadeCNN import InputCascadeCNN
 
 import torch
 
+DEFAULT_NUM_INPUT_CHANNELS = 4
+DEFAULT_NUM_CLASSES = 6
+
 def parse_cli_args():
   
   arg_parser = argparse.ArgumentParser()
@@ -37,6 +40,21 @@ def parse_cli_args():
   arg_parser.add_argument(
     "-d", "--deterministic", action="store_true", dest="deterministic",
     help="Whether to use a deterministic behaviour, wherever possible"
+  )
+  arg_parser.add_argument(
+    "--cascade-type", action="store", dest="cascade_type", type=str, 
+    required=True, choices=["input", "local", "mfc"], 
+    help="The kind of local and global concatenation to use.\nPossible values: \"input\", \"local\", \"mfc\"\nSee paper for more information https://arxiv.org/pdf/1505.03540.pdf"
+  )
+  arg_parser.add_argument(
+    "--num-input-channels", action="store", dest="num_input_channels",
+    type=int, required=False, default=DEFAULT_NUM_INPUT_CHANNELS,
+    help="Number of channels in the input image.\nDefaults to 4, which corresponds to the four modalities of MRI."
+  )
+  arg_parser.add_argument(
+    "--num-classes", action="store", dest="num_classes",
+    type=int, required=False, default=DEFAULT_NUM_CLASSES,
+    help="Number of channels in the input image.\nDefaults to 4, which corresponds to the four modalities of MRI."
   )
 
   parsed_args = arg_parser.parse_args()
@@ -90,6 +108,15 @@ def get_dataloaders(dataset_train, dataset_val, dataset_test, parsed_args):
 
   return dl_train, dl_val, dl_test
 
+def get_model(cascade_type, num_input_channels, num_classes):
+
+  if cascade_type == "input":
+    return InputCascadeCNN(
+      num_input_channels=num_input_channels, 
+      num_classes=num_classes
+    )
+
+
 
 def main():
   parsed_args = parse_cli_args()
@@ -108,14 +135,26 @@ def main():
     dataset_train, dataset_val, dataset_test, parsed_args
   )
 
+  model = get_model(
+    cascade_type=parsed_args.cascade_type, 
+    num_input_channels=parsed_args.num_input_channels, 
+    num_classes=parsed_args.num_classes
+  )
+
+
+
+
+
+
+
   # model = TwoPathCNN(num_input_channels=4, num_classes=6)
   # x = torch.randint(10, 99, (16, 4, 33, 33)).float()
 
-  model = InputCascadeCNN(num_input_channels=4, num_classes=6)
+  # model = InputCascadeCNN(num_input_channels=4, num_classes=6)
   
-  x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
-  x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
-  model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
+  # x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
+  # x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
+  # model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
 
   
   
