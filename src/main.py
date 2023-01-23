@@ -98,6 +98,11 @@ def parse_cli_args():
     dest="delta_2", type=float, required=True, 
     help="Delta_2 value of elastic-net regularization"
   )
+  arg_parser.add_argument(
+    "--dropout", action="store", dest="dropout", type=float, 
+    default=0.2, required=False, 
+    help="Dropout value to use in training\nDefaults to 0.2\nPass None to avoid using Dropout."
+  )
 
   parsed_args = arg_parser.parse_args()
 
@@ -150,12 +155,12 @@ def get_dataloaders(dataset_train, dataset_val, dataset_test, parsed_args):
 
   return dl_train, dl_val, dl_test
 
-def get_model(cascade_type, num_input_channels, num_classes):
+def get_model(cascade_type, num_input_channels, num_classes, dropout):
 
   if cascade_type == "input":
     return InputCascadeCNN(
-      num_input_channels=num_input_channels, 
-      num_classes=num_classes
+      num_input_channels=num_input_channels, num_classes=num_classes, 
+      dropout=dropout
     )
   
 def get_model_trainer(
@@ -216,7 +221,8 @@ def main():
   model = get_model(
     cascade_type=parsed_args.cascade_type, 
     num_input_channels=parsed_args.num_input_channels, 
-    num_classes=parsed_args.num_classes
+    num_classes=parsed_args.num_classes,
+    dropout=parsed_args.dropout
   )
 
   optimizer, learning_rate_scheduler = get_optimizer(

@@ -21,6 +21,8 @@ class InputCascadeCNNModelTrainer():
     
 
 
+
+
     # TODO 
     # Elastic-net regularization 
     # https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md

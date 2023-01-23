@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 class TwoPathCNN(nn.Module):
-  def __init__(self, num_input_channels, num_classes):
+  def __init__(self, num_input_channels, num_classes, dropout):
     
     super().__init__()
 
@@ -22,6 +22,8 @@ class TwoPathCNN(nn.Module):
     )
 
     self.local_pool_0 = nn.MaxPool2d(kernel_size=4, stride=1)
+    
+    self.local_dropout_0 = torch.nn.Dropout2d(p=dropout)
 
     ### END local path, conv_0 block
     
@@ -37,6 +39,9 @@ class TwoPathCNN(nn.Module):
 
     self.local_pool_1 = nn.MaxPool2d(kernel_size=2, stride=1)
 
+    self.local_dropout_1 = torch.nn.Dropout2d(p=dropout)
+
+
     ### END local path, conv_1 block
     
     ### BEGIN global path, conv_0 block
@@ -51,6 +56,9 @@ class TwoPathCNN(nn.Module):
       out_channels=160
     )
 
+    self.global_dropout_0 = torch.nn.Dropout2d(p=dropout)
+
+
     ### END global path, conv_0 block
 
     ### BEGIN concat path, conv_0 block
@@ -58,7 +66,9 @@ class TwoPathCNN(nn.Module):
     self.concat_conv_0 = nn.Conv2d(
       in_channels=224, out_channels=self.num_classes, kernel_size=21
     )
-    
+
+    self.concat_dropout_0 = torch.nn.Dropout2d(p=dropout)
+
     ### END concat path, conv_0 block
     
     
@@ -82,6 +92,8 @@ class TwoPathCNN(nn.Module):
     x_local_path = x_maxout_units.amax(dim=0)
     # print(x_local_path.shape)
 
+    x_local_path = self.local_dropout_0(x_local_path)
+
     x_local_path = self.local_pool_0(x_local_path)
     # print(x_local_path.shape)
 
@@ -98,6 +110,8 @@ class TwoPathCNN(nn.Module):
 
     x_local_path = x_maxout_units.amax(dim=0)
     # print(x_local_path.shape)
+
+    x_local_path = self.local_dropout_1(x_local_path)
 
     x_local_path = self.local_pool_1(x_local_path)
     # print(x_local_path.shape)
@@ -119,6 +133,8 @@ class TwoPathCNN(nn.Module):
 
     x_global_path = x_maxout_units.amax(dim=0)
     # print(x_global_path.shape)
+
+    x_global_path = self.global_dropout_0(x_global_path)
 
     ## END conv 0
     
