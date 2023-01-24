@@ -13,8 +13,19 @@ from InputCascadeCNNModelTrainer import InputCascadeCNNModelTrainer
 
 import torch.optim 
 
+from WandBHelper import WandBHelper
+
 DEFAULT_NUM_INPUT_CHANNELS = 4
 DEFAULT_NUM_CLASSES = 6
+
+WARNING_COLOR ='\033[91m'
+METHOD_COLOR = '\033[94m'
+BOLD = '\033[1m'
+
+GPU_NAME = "GeForce"
+
+WANDB_PROJECT_NAME = "Braver-Cat-End-to-End"
+WANDB_ENTITY_NAME = "Braver-Cat"
 
 def parse_cli_args():
   
@@ -101,8 +112,22 @@ def parse_cli_args():
   arg_parser.add_argument(
     "--dropout", action="store", dest="dropout", type=float, 
     default=0.2, required=False, 
-    help="Dropout value to use in training\nDefaults to 0.2\nPass None to avoid using Dropout."
+    help="Dropout value to use in training\nDefaults to 0.2\nPass 0.0 to avoid using Dropout, as per PyTorch implementation."
   )
+  arg_parser.add_argument(
+    "--num-epochs", action="store", dest="num_epochs", type=int, required=True, 
+    help="Number of epochs to train for."
+  )
+  arg_parser.add_argument(
+    "--job-type", action="store", dest="job_type", required=True, 
+    choices=["train-e2e", "train-tl", "hyperparams-tuning-e2e", "hyperparams-tuning-tl"], 
+    help="The kind of job that will be launched.\n" + 
+      "train-e2e: train the selected model end-to-end, according to given configuration\n" + 
+      "train-tl: train the selected model using transfer learning, starting from a pre-trained model specified in PRE_TRAINED_PATH_PLACEHOLDER\n" + 
+      "hyperparams-tuning-e2e: perform hyperparameter tuning on a model trained end-to-end" + 
+      "hyperparams-tuning-tl: perform hyperparameter tuning on a model trained via transfer learning"
+  )
+  
 
   parsed_args = arg_parser.parse_args()
 
@@ -163,14 +188,28 @@ def get_model(cascade_type, num_input_channels, num_classes, dropout):
       dropout=dropout
     )
   
+def get_device():
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+  current_device = torch.cuda.current_device()
+  current_device_name = torch.cuda.get_device_name(current_device)
+  
+
+  if GPU_NAME in current_device_name:
+    print(f"{METHOD_COLOR}{BOLD}main: {BOLD}" + f"{WARNING_COLOR}[WARNING] Unable to use GPU as PyTorch device!")
+
+
+  return device
+  
 def get_model_trainer(
-    model, optimizer, learning_rate_scheduler, batch_size, limit_num_batches,
-    dl_train, dl_val, dl_test, delta_1, delta_2
+    device, model, optimizer, learning_rate_scheduler, batch_size, 
+    limit_num_batches, dl_train, dl_val, dl_test, delta_1, delta_2
   ):
 
   if model.cascade_type == "input":
     
     return InputCascadeCNNModelTrainer(
+      device=device,
       model=model,
       optimizer=optimizer, 
       learning_rate_scheduler=learning_rate_scheduler,
@@ -234,7 +273,10 @@ def main():
     momentum=parsed_args.momentum, 
   )
 
+  device = get_device()
+
   model_trainer = get_model_trainer(
+    device=device,
     model=model,
     optimizer=optimizer, learning_rate_scheduler=learning_rate_scheduler,
     batch_size=parsed_args.batch_size, 
@@ -242,6 +284,16 @@ def main():
     dl_train=dl_train, dl_val=dl_val, dl_test=dl_test,
     delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2
   )
+
+  wandb_helper = WandBHelper(
+    project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
+    parsed_args=parsed_args
+  )
+
+  wandb_helper.init_run()
+
+
+
 
 
 
