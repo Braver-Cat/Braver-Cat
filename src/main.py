@@ -15,6 +15,10 @@ import torch.optim
 
 from WandBHelper import WandBHelper
 
+from datetime import datetime
+
+import os
+
 DEFAULT_NUM_INPUT_CHANNELS = 4
 DEFAULT_NUM_CLASSES = 6
 
@@ -127,6 +131,14 @@ def parse_cli_args():
       "hyperparams-tuning-e2e: perform hyperparameter tuning on a model trained end-to-end" + 
       "hyperparams-tuning-tl: perform hyperparameter tuning on a model trained via transfer learning"
   )
+  arg_parser.add_argument(
+    "--checkpoint-path", action="store", dest="checkpoint_base_path", type=str, 
+    required=True, help="Base path to store model checkpoints in."
+  )
+  arg_parser.add_argument(
+    "--checkpoint-step", action="store", dest="checkpoint_step", type=int, 
+    default=-1, required=False, help="How often to store a checkpoint.\nDefaults to -1, which amounts to no checkpoint saved.\nModel after final epoch is always saved."
+  )
   
 
   parsed_args = arg_parser.parse_args()
@@ -203,7 +215,8 @@ def get_device():
   
 def get_model_trainer(
     device, model, num_epochs, optimizer, learning_rate_scheduler, batch_size, 
-    num_batches, dl_train, dl_val, dl_test, delta_1, delta_2
+    num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
+    checkpoint_full_path, checkpoint_step
   ):
 
   if model.cascade_type == "input":
@@ -220,7 +233,9 @@ def get_model_trainer(
       dl_val=dl_val, 
       dl_test=dl_test,
       delta_1=delta_1,
-      delta_2=delta_2
+      delta_2=delta_2,
+      checkpoint_full_path=checkpoint_full_path,
+      checkpoint_step=checkpoint_step,
     )
   
 def get_optimizer(
@@ -240,10 +255,25 @@ def get_optimizer(
     )
 
     return optimizer, learning_rate_scheduler
+  
+def get_train_id():
+  return datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+def make_dir_if_absent(dir):
+  if not os.path.exists(dir):
+      os.makedirs(dir)
+
+def get_checkpoint_full_path(base_path, train_id):
+  checkpoint_full_path = f"{base_path}/{train_id}"
+
+  make_dir_if_absent(checkpoint_full_path)
+  
+  return checkpoint_full_path
 
 
 def main():
   parsed_args = parse_cli_args()
+  other_args = dict()
 
   patch_size_consistency_result = check_patch_size_consistency(
     patch_size=parsed_args.patch_size, 
@@ -275,6 +305,13 @@ def main():
     momentum=parsed_args.momentum, 
   )
 
+
+  other_args["train_id"] = get_train_id()
+  
+  checkpoint_full_path = get_checkpoint_full_path(
+    base_path=parsed_args.checkpoint_base_path, train_id=other_args["train_id"]
+  )
+  
   device = get_device()
 
   model_trainer = get_model_trainer(
@@ -285,17 +322,42 @@ def main():
     batch_size=parsed_args.batch_size, 
     num_batches=parsed_args.num_batches,
     dl_train=dl_train, dl_val=dl_val, dl_test=dl_test,
-    delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2
+    delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2,
+    checkpoint_full_path=checkpoint_full_path,
+    checkpoint_step=parsed_args.checkpoint_step,
   )
 
   wandb_helper = WandBHelper(
     project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
-    parsed_args=parsed_args
+    parsed_args=parsed_args, other_args=other_args
   )
 
   wandb_helper.init_run()
 
   model_trainer.train()
+
+  wandb_helper.update_config(
+    config_update={
+      "best_epoch_val_loss": model_trainer.best_epoch_val_loss,
+      "best_epoch_val_acc": model_trainer.best_epoch_val_acc,
+      "best_val_acc": model_trainer.best_val_acc,
+      "best_val_loss": model_trainer.best_val_loss,
+    }
+  )
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  wandb_helper.run.finish()
 
 
 
