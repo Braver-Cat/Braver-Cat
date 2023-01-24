@@ -39,11 +39,11 @@ class InputCascadeCNNModelTrainer():
       iterable=range(self.num_epochs), colour=PBAR_EPOCHS_COLOR, position=0,
     )
     self.pbar_batches_train = tqdm(
-      iterable=iter(self.dl_train), colour=PBAR_BATCHES_TRAIN_COLOR, leave=False, 
+      iterable=self.dl_train, colour=PBAR_BATCHES_TRAIN_COLOR, leave=False, 
       position=1
     )
     self.pbar_batches_val = tqdm(
-      iterable=iter(self.dl_val), colour=PBAR_BATCHES_VAL_COLOR, leave=False, 
+      iterable=self.dl_val, colour=PBAR_BATCHES_VAL_COLOR, leave=False, 
       position=2
     )
 
@@ -56,14 +56,14 @@ class InputCascadeCNNModelTrainer():
       self.pbar_batches_train.set_description(f"epoch {epoch + 1}")
       self.pbar_batches_val.set_description(f"epoch {epoch + 1}")
 
-      for batch_train in iter(self.dl_train):
+      for batch_train in self.dl_train:
 
         self.pbar_batches_train.update(1)
 
       
       with torch.no_grad():
 
-        for batch_val in iter(self.dl_val):
+        for batch_val in self.dl_val:
 
           self.pbar_batches_val.update(1)
 
@@ -77,14 +77,14 @@ class InputCascadeCNNModelTrainer():
     ### BEGIN test
 
     self.pbar_batches_test = tqdm(
-      iterable=iter(self.dl_test), colour=PBAR_BATCHES_TEST_COLOR, leave=False, 
+      iterable=self.dl_test, colour=PBAR_BATCHES_TEST_COLOR, leave=False, 
       position=3
     )
     self.pbar_epochs.set_description(f"epoch {self.num_epochs}")
 
     with torch.no_grad():
 
-      for batch_test in iter(self.dl_test):
+      for batch_test in self.dl_test:
 
         self.pbar_batches_test.update(1)
     
