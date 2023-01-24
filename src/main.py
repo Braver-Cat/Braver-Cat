@@ -195,15 +195,15 @@ def get_device():
   current_device_name = torch.cuda.get_device_name(current_device)
   
 
-  if GPU_NAME in current_device_name:
+  if GPU_NAME not in current_device_name:
     print(f"{METHOD_COLOR}{BOLD}main: {BOLD}" + f"{WARNING_COLOR}[WARNING] Unable to use GPU as PyTorch device!")
 
 
   return device
   
 def get_model_trainer(
-    device, model, optimizer, learning_rate_scheduler, batch_size, 
-    limit_num_batches, dl_train, dl_val, dl_test, delta_1, delta_2
+    device, model, num_epochs, optimizer, learning_rate_scheduler, batch_size, 
+    num_batches, dl_train, dl_val, dl_test, delta_1, delta_2
   ):
 
   if model.cascade_type == "input":
@@ -211,9 +211,11 @@ def get_model_trainer(
     return InputCascadeCNNModelTrainer(
       device=device,
       model=model,
+      num_epochs=num_epochs,
       optimizer=optimizer, 
       learning_rate_scheduler=learning_rate_scheduler,
       batch_size=batch_size,
+      num_batches=num_batches,
       dl_train=dl_train, 
       dl_val=dl_val, 
       dl_test=dl_test,
@@ -278,9 +280,10 @@ def main():
   model_trainer = get_model_trainer(
     device=device,
     model=model,
+    num_epochs=parsed_args.num_epochs,
     optimizer=optimizer, learning_rate_scheduler=learning_rate_scheduler,
     batch_size=parsed_args.batch_size, 
-    limit_num_batches=parsed_args.num_batches,
+    num_batches=parsed_args.num_batches,
     dl_train=dl_train, dl_val=dl_val, dl_test=dl_test,
     delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2
   )
@@ -291,6 +294,8 @@ def main():
   )
 
   wandb_helper.init_run()
+
+  model_trainer.train()
 
 
 
