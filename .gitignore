@@ -135,3 +135,6 @@ data/*
 !data/*summary_statistics.json
 
 resources/
+
+# Weights and Biases stuff
+wandb/
