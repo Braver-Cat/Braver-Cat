@@ -138,3 +138,6 @@ resources/
 
 # Weights and Biases stuff
 wandb/
+
+# Training checkpoints
+checkpoints/
