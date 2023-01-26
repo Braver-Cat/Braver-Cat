@@ -1,9 +1,11 @@
+import imp
 import torch
 
 from rich.progress import *
 
 from rich.live import Live
 from rich.table import Table
+from CustomProgress import CustomProgress
 
 PBAR_EPOCHS_COLOR = "#830a48"
 PBAR_TRAIN_COLOR = "#2a9d8f"
@@ -64,8 +66,6 @@ class InputCascadeCNNModelTrainer():
     self.pbar_train = None
     self.pbar_val = None
     self.pbar_test = None
-    self.pbar_train_loss = None
-    self.pbar_val_loss = None
 
     self.best_epoch_train_acc = 0
     self.best_epoch_train_loss = 0
@@ -73,11 +73,17 @@ class InputCascadeCNNModelTrainer():
     self.best_train_acc = 0
     self.best_train_loss = np.inf
     
+    self.best_val_acc = 0
+    self.best_val_loss = np.inf
+
     self.best_epoch_val_acc = 0
     self.best_epoch_val_loss = 0
 
-    self.best_val_acc = 0
-    self.best_val_loss = np.inf
+    self.current_train_acc = 0
+    self.current_train_loss = np.inf
+    
+    self.current_val_acc = 0
+    self.current_val_loss = np.inf
 
   def _set_pbars(self):
     self.pbar_epochs = self.pbar.add_task(
@@ -180,11 +186,13 @@ class InputCascadeCNNModelTrainer():
         )
 
         loss.backward()
-        
+
         self.optimizer.step()
 
-        if loss.item() < self.best_train_loss:
-          self.best_train_loss = loss.item()
+        self.current_train_loss = loss.item()
+
+        if self.current_train_loss < self.best_train_loss:
+          self.best_train_loss = self.current_train_loss
 
         self.pbar.update(task_id=self.pbar_train, advance=1)
         self.pbar.update(
@@ -218,14 +226,31 @@ class InputCascadeCNNModelTrainer():
             prediction=prediction, label=label_global_scale, model=self.model
           )
 
-          if loss.item() < self.best_val_loss:
-            self.best_val_loss = loss.item()
+          self.current_val_loss = loss.item()
+
+          if self.current_val_loss < self.best_val_loss:
+            self.best_val_loss = self.current_val_loss
 
           self.pbar.update(task_id=self.pbar_val, advance=1)
           self.pbar.update(
             task_id=self.pbar_epochs, 
             advance=( 1/(self.num_batches_tot_train) )
           )
+          self.pbar.update_table(
+            current_train_loss=self.current_train_loss,
+            current_val_loss=self.current_val_loss,
+            best_train_loss=self.best_train_loss,
+            best_val_loss=self.best_val_loss,
+            best_epoch_train_loss=self.best_epoch_train_loss,
+            best_epoch_val_loss=self.best_epoch_val_loss,
+            current_train_acc=self.current_train_acc,
+            current_val_acc=self.current_val_acc,
+            best_train_acc=self.best_train_acc,
+            best_val_acc=self.best_val_acc,
+            best_epoch_train_acc=self.best_epoch_train_acc,
+            best_epoch_val_acc=self.best_epoch_val_acc
+          )
+
 
       self._handle_checkpoint(
         current_epoch=epoch, current_val_acc=acc_val, current_val_loss=loss_val,
@@ -263,7 +288,7 @@ class InputCascadeCNNModelTrainer():
 
   def train(self):
 
-    with Progress(
+    with CustomProgress(
       TextColumn(
         "[progress.description]{task.description}",
         justify="right"
