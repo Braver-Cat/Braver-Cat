@@ -110,8 +110,8 @@ def parse_cli_args():
     help="What learning rate decay factor to use during training via the learning rate scheduler.\nDefaults to 1, as per paper setup"
   )
   arg_parser.add_argument(
-    "--num-batches", action="store", dest="num_batches",
-    type=int, required=False, default=-1,
+    "--percentage-num-batches", action="store", dest="percentage_num_batches",
+    type=int, required=False, default=100,
     help="Sets the number of batches to train on.\nUseful in debug.\nDefaults to -1, which ignores the limit."
   )
   arg_parser.add_argument(
@@ -221,22 +221,6 @@ def get_datasets(parsed_args):
   )
   
   return dataset_train, dataset_val, dataset_test 
-  
-
-  dataset_train = BRATS2013DatasetPatch(
-    patch_df_path=dataset_train_path, patch_size=parsed_args.patch_size, 
-    load_in_memory=parsed_args.load_data_in_memory, stage="train"
-  )
-  dataset_val = BRATS2013DatasetPatch(
-    patch_df_path=dataset_val_path, patch_size=parsed_args.patch_size, 
-    load_in_memory=parsed_args.load_data_in_memory, stage="val"
-  )
-  dataset_test = BRATS2013DatasetPatch(
-    patch_df_path=dataset_test_path, patch_size=parsed_args.patch_size, 
-    load_in_memory=parsed_args.load_data_in_memory, stage="test"
-  )
-
-  return dataset_train, dataset_val, dataset_test
 
 def get_dataloaders(dataset_train, dataset_val, dataset_test, parsed_args):
   dl_train = DataLoader(
@@ -277,7 +261,7 @@ def get_device():
   
 def get_model_trainer(
     device, model, num_epochs, optimizer, learning_rate_scheduler, batch_size, 
-    num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
+    percentage_num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
     checkpoint_full_path, checkpoint_step
   ):
 
@@ -290,7 +274,7 @@ def get_model_trainer(
       optimizer=optimizer, 
       learning_rate_scheduler=learning_rate_scheduler,
       batch_size=batch_size,
-      num_batches=num_batches,
+      percentage_num_batches=percentage_num_batches,
       dl_train=dl_train, 
       dl_val=dl_val, 
       dl_test=dl_test,
@@ -337,9 +321,7 @@ def main():
   parsed_args = parse_cli_args()
   other_args = dict()
 
-  dataset_train, dataset_val, dataset_test = get_datasets(parsed_args)
-
-  return 
+  dataset_train, dataset_val, dataset_test = get_datasets(parsed_args) 
 
   dl_train, dl_val, dl_test = get_dataloaders(
     dataset_train, dataset_val, dataset_test, parsed_args
@@ -376,12 +358,13 @@ def main():
     num_epochs=parsed_args.num_epochs,
     optimizer=optimizer, learning_rate_scheduler=learning_rate_scheduler,
     batch_size=parsed_args.batch_size, 
-    num_batches=parsed_args.num_batches,
+    percentage_num_batches=parsed_args.percentage_num_batches,
     dl_train=dl_train, dl_val=dl_val, dl_test=dl_test,
     delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2,
     checkpoint_full_path=checkpoint_full_path,
     checkpoint_step=parsed_args.checkpoint_step,
   )
+
 
   wandb_helper = WandBHelper(
     project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
@@ -390,7 +373,7 @@ def main():
 
   wandb_helper.init_run()
 
-  # model_trainer.train()
+  model_trainer.train()
 
   wandb_helper.update_config(
     config_update={
@@ -429,11 +412,11 @@ def main():
   # model = TwoPathCNN(num_input_channels=4, num_classes=6)
   # x = torch.randint(10, 99, (16, 4, 33, 33)).float()
 
-  model = InputCascadeCNN(num_input_channels=4, num_classes=6)
+  # model = InputCascadeCNN(num_input_channels=4, num_classes=6)
   
-  x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
-  x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
-  model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
+  # x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
+  # x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
+  # model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
 
   
   

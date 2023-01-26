@@ -9,6 +9,8 @@ from tqdm import tqdm
 
 from rich import print
 
+DEFAULT_TENSOR_DTYPE = torch.float32
+
 class BRATS2013DatasetPatch(Dataset):
 
   def __init__(
@@ -50,16 +52,22 @@ class BRATS2013DatasetPatch(Dataset):
 
     else:
 
-      patch = np.load(
-        f"{self.patch_df.iloc[idx][self.patch_column_name]}.npy"
+      patch = torch.tensor(
+        data=np.load(
+          f"{self.patch_df.iloc[idx][self.patch_column_name]}.npy"
+        ),
+        dtype=DEFAULT_TENSOR_DTYPE
       )
-      patch_label = self.patch_df.iloc[idx][self.label_column_name]
 
-    # print("PATCH LABEL", torch.tensor(patch_label))
+      patch_label = torch.tensor(
+        data=self.patch_df.iloc[idx][self.label_column_name], 
+        dtype=DEFAULT_TENSOR_DTYPE
+      )
+
 
     return {
       "patch": patch,
-      "patch_label": torch.tensor(patch_label)
+      "patch_label": patch_label
     }
   
   def _load_data_in_memory(self):
@@ -82,5 +90,8 @@ class BRATS2013DatasetPatch(Dataset):
         
         labels.append(row[self.label_column_name])
 
-      return data, labels
+      return (
+        torch.tensor(data=data, dtype=DEFAULT_TENSOR_DTYPE), 
+        torch.tensor(data=labels, dtype=DEFAULT_TENSOR_DTYPE)
+      )
   

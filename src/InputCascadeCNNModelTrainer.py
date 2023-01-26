@@ -15,22 +15,38 @@ class InputCascadeCNNModelTrainer():
   
   def __init__(
     self, device, model, num_epochs, optimizer, learning_rate_scheduler, 
-    batch_size, num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
+    batch_size, percentage_num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
     checkpoint_full_path, checkpoint_step
   ):
     
     self.device = device
+
     self.model = model
+
     self.num_epochs = num_epochs
+
     self.optimizer = optimizer 
     self.learning_rate_scheduler = learning_rate_scheduler
-    self.batch_size = batch_size
-    self.num_batches = num_batches,
-    self.dl_train = dl_train 
-    self.dl_val = dl_val 
-    self.dl_test = dl_test
     self.delta_1 = delta_1
     self.delta_2 = delta_2
+    
+    self.batch_size = batch_size
+    self.percentage_num_batches = percentage_num_batches,
+    
+    self.dl_train = dl_train 
+    self.num_batches_train = int(len(dl_train) * percentage_num_batches/100)
+    self.num_batches_train += self.num_batches_train == 0
+
+    self.dl_val = dl_val
+    self.num_batches_val = int(len(dl_val) * percentage_num_batches/100)
+    self.num_batches_val += self.num_batches_val == 0
+    
+    self.dl_test = dl_test
+    self.num_batches_test = int(len(dl_test) * percentage_num_batches/100)
+    self.num_batches_test += self.num_batches_test == 0
+
+    self.num_batches_tot_train = self.num_batches_train + self.num_batches_val
+    
     self.checkpoint_full_path = checkpoint_full_path
     self.checkpoint_step_size = checkpoint_step
 
@@ -50,13 +66,16 @@ class InputCascadeCNNModelTrainer():
       f"[bold {PBAR_EPOCHS_COLOR}] Epochs", start=True, total=self.num_epochs,
     )
     self.pbar_train = self.pbar.add_task(
-      f"[bold {PBAR_TRAIN_COLOR}] Train", start=True, total=len(self.dl_train),
+      f"[bold {PBAR_TRAIN_COLOR}] Train", start=True, 
+      total=self.num_batches_train,
     )
     self.pbar_val = self.pbar.add_task(
-      f"[bold {PBAR_VAL_COLOR}] Validation", start=True, total=len(self.dl_val),
+      f"[bold {PBAR_VAL_COLOR}] Validation", start=True, 
+      total=self.num_batches_val,
     )
     self.pbar_test = self.pbar.add_task(
-      description=f"[bold {PBAR_TEST_COLOR}] Test", start=True, total=len(self.dl_test),
+      description=f"[bold {PBAR_TEST_COLOR}] Test", start=True, 
+      total=self.num_batches_test,
     )
 
   def _store_checkpoint(self, checkpoint_path_suffix):
@@ -97,28 +116,60 @@ class InputCascadeCNNModelTrainer():
       self.pbar.reset(self.pbar_train) 
       self.pbar.reset(self.pbar_val)
 
-      for batch_train in self.dl_train:
+      self.model.train()
 
-        patch = batch_train["patch"].to(self.device)
-        patch_label = batch_train["patch_label"].to(self.device)
+      for batch_idx, batch_train in enumerate(self.dl_train):
+
+        if (batch_idx > self.num_batches_train):
+          break
+
+        patch_local_scale = batch_train["local_scale"]["patch"].to(self.device)
+        label_local_scale = batch_train["local_scale"]["patch_label"].to(self.device)
+        
+        patch_global_scale = batch_train["global_scale"]["patch"].to(self.device)
+        label_global_scale = batch_train["global_scale"]["patch_label"].to(self.device)
+
+        prediction = self.model(
+          x_local_scale=patch_local_scale, 
+          x_global_scale=patch_global_scale
+        )
 
         self.pbar.update(task_id=self.pbar_train, advance=1)
+        self.pbar.update(
+          task_id=self.pbar_epochs, 
+          advance=( 1/(self.num_batches_tot_train) )
+        )
 
       
       with torch.no_grad():
 
-        for batch_val in self.dl_val:
+        self.model.eval()
 
-          patch = batch_val["patch"].to(self.device)
-          patch_label = batch_val["patch_label"].to(self.device)
+        for batch_idx, batch_val in enumerate(self.dl_val):
+
+          if (batch_idx > self.num_batches_val):
+            break
+
+          patch_local_scale = batch_val["local_scale"]["patch"].to(self.device)
+          label_local_scale = batch_val["local_scale"]["patch_label"].to(self.device)
+          
+          patch_global_scale = batch_val["global_scale"]["patch"].to(self.device)
+          label_global_scale = batch_val["global_scale"]["patch_label"].to(self.device)
+
+          prediction = self.model(
+            x_local_scale=patch_local_scale, 
+            x_global_scale=patch_global_scale
+          )
 
           self.pbar.update(task_id=self.pbar_val, advance=1)
+          self.pbar.update(
+          task_id=self.pbar_epochs, 
+          advance=( 1/(self.num_batches_tot_train) )
+        )
 
       self._handle_checkpoint(
         current_epoch=epoch, current_val_acc=acc_val, current_val_loss=loss_val,
       )
-
-      self.pbar.update(task_id=self.pbar_epochs, advance=1)
 
     return 0
   
@@ -126,10 +177,23 @@ class InputCascadeCNNModelTrainer():
 
     with torch.no_grad():
 
-      for batch_test in self.dl_test:
+      self.model.eval()
 
-        patch = batch_test["patch"].to(self.device)
-        patch_label = batch_test["patch_label"].to(self.device)
+      for batch_idx, batch_test in enumerate(self.dl_test):
+
+        if (batch_idx > self.num_batches_test):
+          break
+
+        patch_local_scale = batch_test["local_scale"]["patch"].to(self.device)
+        label_local_scale = batch_test["local_scale"]["patch_label"].to(self.device)
+        
+        patch_global_scale = batch_test["global_scale"]["patch"].to(self.device)
+        label_global_scale = batch_test["global_scale"]["patch_label"].to(self.device)
+
+        prediction = self.model(
+          x_local_scale=patch_local_scale, 
+          x_global_scale=patch_global_scale
+        )
 
         self.pbar.update(task_id=self.pbar_test, advance=1)
 

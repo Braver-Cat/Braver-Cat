@@ -1,3 +1,5 @@
+from rich import print
+
 import torch
 from torch import nn
 
@@ -18,7 +20,6 @@ class TwoPathCNN(nn.Module):
       in_channels=self.num_input_channels, kernel_size=7, 
       out_channels=64
     )
-    self.local_conv_0_maxout_unit_0
     torch.nn.init.uniform_(
       self.local_conv_0_maxout_unit_0.weight, 
       UNIFORM_INIT_LOWER_BOUND, UNIFORM_INIT_UPPER_BOUND

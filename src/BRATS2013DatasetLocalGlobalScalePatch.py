@@ -34,11 +34,17 @@ class BRATS2013DatasetLocalGlobalScalePatch(Dataset):
     self._check_datasets_lens()
 
   def __len__(self):
-    return len(self.patch_df.index)
+    # safe to use the len of one of the two datasets because of the 
+    # _check-datasets_lens() control that is called in the constructor
+
+    return len(self.local_scale_dataset)
 
   def __getitem__(self, idx):
 
-    return 
+    return {
+      "global_scale": self.global_scale_dataset[idx],
+      "local_scale": self.local_scale_dataset[idx],
+    }
   
   def _check_datasets_lens(self):
     

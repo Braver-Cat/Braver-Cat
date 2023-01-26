@@ -14,22 +14,22 @@ class InputCascadeCNN(nn.Module):
 
     self.dropout = dropout
 
-    self.large_scale_CNN = TwoPathCNN(
+    self.global_scale_CNN = TwoPathCNN(
       num_input_channels=self.num_input_channels,
       num_classes=self.num_classes, dropout=self.dropout
     )
 
-    self.small_scale_CNN = TwoPathCNN(
+    self.local_scale_CNN = TwoPathCNN(
       num_input_channels=self.num_input_channels + self.num_classes,
       num_classes=self.num_classes, dropout=self.dropout
     )
 
-  def forward(self, x_small_scale, x_large_scale):
-    x_large_scale = self.large_scale_CNN(x_large_scale)
+  def forward(self, x_local_scale, x_global_scale):
+    x_global_scale = self.global_scale_CNN(x_global_scale)
 
-    x_concat = torch.concat((x_large_scale, x_small_scale), dim=1)
+    x_concat = torch.concat((x_global_scale, x_local_scale), dim=1)
 
-    x_concat = self.small_scale_CNN(x_concat)
-    print(x_concat.shape)
+    x_concat = self.local_scale_CNN(x_concat)
+    # print(x_concat.shape)
 
     return x_concat
