@@ -34,11 +34,11 @@ class InputCascadeCNN(nn.Module):
 
     return x_concat
   
-  def get_model_weights(self):
+  def get_model_weights(self, device):
 
     return torch.cat(
       (
-        self.local_scale_CNN.get_model_weights(), 
-        self.global_scale_CNN.get_model_weights()
+        self.local_scale_CNN.get_model_weights(device=device), 
+        self.global_scale_CNN.get_model_weights(device=device)
       )
     )

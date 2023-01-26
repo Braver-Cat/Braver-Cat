@@ -62,7 +62,7 @@ class BRATS2013DatasetPatch(Dataset):
       patch_label = torch.tensor(
         data=self.patch_df.iloc[idx][self.label_column_name], 
         dtype=DEFAULT_TENSOR_DTYPE
-      )
+      ).unsqueeze(dim=0)
 
 
     return {
@@ -92,6 +92,6 @@ class BRATS2013DatasetPatch(Dataset):
 
       return (
         torch.tensor(data=data, dtype=DEFAULT_TENSOR_DTYPE), 
-        torch.tensor(data=labels, dtype=DEFAULT_TENSOR_DTYPE)
+        torch.tensor(data=labels, dtype=DEFAULT_TENSOR_DTYPE).unsqueeze(1)
       )
   

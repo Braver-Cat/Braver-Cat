@@ -191,20 +191,42 @@ class TwoPathCNN(nn.Module):
       if param.requires_grad:
           layer_weights.append(param.data)
 
-    return layer_weights
+    weights = layer_weights[0].flatten()
+    biases = layer_weights[1].flatten()
+
+    weights_and_biases = torch.cat((weights, biases))
+
+    return weights_and_biases
 
 
   
-  def get_model_weights(self):
+  def get_model_weights(self, device):
 
-    weights = []
+    weights = torch.empty((1)).to(device)
 
-    weights.extend(self._get_layer_weights(self.local_conv_0_maxout_unit_0))
-    weights.extend(self._get_layer_weights(self.local_conv_0_maxout_unit_1))
-    weights.extend(self._get_layer_weights(self.local_conv_1_maxout_unit_0))
-    weights.extend(self._get_layer_weights(self.local_conv_1_maxout_unit_1))
-    weights.extend(self._get_layer_weights(self.global_conv_0_maxout_unit_0))
-    weights.extend(self._get_layer_weights(self.global_conv_0_maxout_unit_1))
-    weights.extend(self._get_layer_weights(self.concat_conv_0))
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.local_conv_0_maxout_unit_0) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.local_conv_0_maxout_unit_0) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.local_conv_0_maxout_unit_1) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.local_conv_1_maxout_unit_0) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.local_conv_1_maxout_unit_1) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.global_conv_0_maxout_unit_0) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.global_conv_0_maxout_unit_1) )
+    )
+    weights = torch.cat(
+      ( weights, self._get_layer_weights(self.concat_conv_0) )
+    )
 
-    return torch.tensor(weights, dtype=torch.float32)
+    return weights

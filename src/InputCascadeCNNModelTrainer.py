@@ -2,6 +2,9 @@ import torch
 
 from rich.progress import *
 
+from rich.live import Live
+from rich.table import Table
+
 PBAR_EPOCHS_COLOR = "#830a48"
 PBAR_TRAIN_COLOR = "#2a9d8f"
 PBAR_VAL_COLOR = "#065a82"
@@ -33,7 +36,7 @@ class InputCascadeCNNModelTrainer():
     self.delta_2 = delta_2
     
     self.loss_fn = CrossEntropyLossElasticNet(
-      delta_1=self.delta_1, delta_2=self.delta_2
+      delta_1=self.delta_1, delta_2=self.delta_2, device=self.device
     )
     
     self.batch_size = batch_size
@@ -56,11 +59,20 @@ class InputCascadeCNNModelTrainer():
     self.checkpoint_full_path = checkpoint_full_path
     self.checkpoint_step_size = checkpoint_step
 
+    self.pbar = None
     self.pbar_epochs = None
     self.pbar_train = None
     self.pbar_val = None
     self.pbar_test = None
+    self.pbar_train_loss = None
+    self.pbar_val_loss = None
 
+    self.best_epoch_train_acc = 0
+    self.best_epoch_train_loss = 0
+
+    self.best_train_acc = 0
+    self.best_train_loss = np.inf
+    
     self.best_epoch_val_acc = 0
     self.best_epoch_val_loss = 0
 
@@ -129,7 +141,7 @@ class InputCascadeCNNModelTrainer():
       self.best_epoch_val_acc = current_epoch
 
     return
-  
+
   def _train(self):
 
     self.model = self.model.to(self.device)
@@ -161,10 +173,18 @@ class InputCascadeCNNModelTrainer():
           x_local_scale=patch_local_scale, 
           x_global_scale=patch_global_scale
         )
+        prediction = prediction.squeeze(-1).transpose(dim0=1, dim1=2)
 
-        loss_train = self.loss_fn(
+        loss = self.loss_fn(
           prediction=prediction, label=label_global_scale, model=self.model
         )
+
+        loss.backward()
+        
+        self.optimizer.step()
+
+        if loss.item() < self.best_train_loss:
+          self.best_train_loss = loss.item()
 
         self.pbar.update(task_id=self.pbar_train, advance=1)
         self.pbar.update(
@@ -192,16 +212,20 @@ class InputCascadeCNNModelTrainer():
             x_local_scale=patch_local_scale, 
             x_global_scale=patch_global_scale
           )
+          prediction = prediction.squeeze(-1).transpose(dim0=1, dim1=2)
 
-          loss_val = self.loss_fn(
+          loss = self.loss_fn(
             prediction=prediction, label=label_global_scale, model=self.model
           )
 
+          if loss.item() < self.best_val_loss:
+            self.best_val_loss = loss.item()
+
           self.pbar.update(task_id=self.pbar_val, advance=1)
           self.pbar.update(
-          task_id=self.pbar_epochs, 
-          advance=( 1/(self.num_batches_tot_train) )
-        )
+            task_id=self.pbar_epochs, 
+            advance=( 1/(self.num_batches_tot_train) )
+          )
 
       self._handle_checkpoint(
         current_epoch=epoch, current_val_acc=acc_val, current_val_loss=loss_val,
@@ -240,16 +264,22 @@ class InputCascadeCNNModelTrainer():
   def train(self):
 
     with Progress(
-      TextColumn("[progress.description]{task.description}"),
-      TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+      TextColumn(
+        "[progress.description]{task.description}",
+        justify="right"
+      ),
+      TextColumn(
+        "[progress.percentage]{task.percentage:>3.0f}%",
+        justify="right"
+      ),
       BarColumn(),
       MofNCompleteColumn(),
       TextColumn("•"),
       TimeElapsedColumn(),
       TextColumn("•"),
-      TimeRemainingColumn(),
+      TimeRemainingColumn()
     ) as progress:
-
+        
       print()
 
       self.pbar = progress
