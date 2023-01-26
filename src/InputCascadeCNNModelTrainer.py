@@ -37,7 +37,10 @@ class InputCascadeCNNModelTrainer():
     self.delta_1 = delta_1
     self.delta_2 = delta_2
     
-    self.loss_fn = CrossEntropyLossElasticNet(
+    self.loss_fn_train = CrossEntropyLossElasticNet(
+      delta_1=self.delta_1, delta_2=self.delta_2, device=self.device
+    )
+    self.loss_fn_val = CrossEntropyLossElasticNet(
       delta_1=self.delta_1, delta_2=self.delta_2, device=self.device
     )
     
@@ -181,9 +184,11 @@ class InputCascadeCNNModelTrainer():
         )
         prediction = prediction.squeeze(-1).transpose(dim0=1, dim1=2)
 
-        loss = self.loss_fn(
-          prediction=prediction, label=label_global_scale, model=self.model
-        )
+        # loss = self.loss_fn_train(
+        #   prediction=prediction, label=label_global_scale, model=self.model
+        # )
+
+        loss = torch.nn.functional.cross_entropy(prediction, label_global_scale)
 
         loss.backward()
 
@@ -193,6 +198,7 @@ class InputCascadeCNNModelTrainer():
 
         if self.current_train_loss < self.best_train_loss:
           self.best_train_loss = self.current_train_loss
+          self.best_epoch_train_loss = epoch
 
         self.pbar.update(task_id=self.pbar_train, advance=1)
         self.pbar.update(
@@ -222,34 +228,37 @@ class InputCascadeCNNModelTrainer():
           )
           prediction = prediction.squeeze(-1).transpose(dim0=1, dim1=2)
 
-          loss = self.loss_fn(
-            prediction=prediction, label=label_global_scale, model=self.model
-          )
+          # loss = self.loss_fn_val(
+          #   prediction=prediction, label=label_global_scale, model=self.model
+          # )
+          loss = torch.nn.functional.cross_entropy(prediction, label_global_scale)
 
           self.current_val_loss = loss.item()
 
           if self.current_val_loss < self.best_val_loss:
             self.best_val_loss = self.current_val_loss
+            self.best_epoch_val_loss = epoch
 
           self.pbar.update(task_id=self.pbar_val, advance=1)
           self.pbar.update(
             task_id=self.pbar_epochs, 
             advance=( 1/(self.num_batches_tot_train) )
           )
-          self.pbar.update_table(
-            current_train_loss=self.current_train_loss,
-            current_val_loss=self.current_val_loss,
-            best_train_loss=self.best_train_loss,
-            best_val_loss=self.best_val_loss,
-            best_epoch_train_loss=self.best_epoch_train_loss,
-            best_epoch_val_loss=self.best_epoch_val_loss,
-            current_train_acc=self.current_train_acc,
-            current_val_acc=self.current_val_acc,
-            best_train_acc=self.best_train_acc,
-            best_val_acc=self.best_val_acc,
-            best_epoch_train_acc=self.best_epoch_train_acc,
-            best_epoch_val_acc=self.best_epoch_val_acc
-          )
+      
+      self.pbar.update_table(
+        current_train_loss=self.current_train_loss,
+        current_val_loss=self.current_val_loss,
+        best_train_loss=self.best_train_loss,
+        best_val_loss=self.best_val_loss,
+        best_epoch_train_loss=self.best_epoch_train_loss,
+        best_epoch_val_loss=self.best_epoch_val_loss,
+        current_train_acc=self.current_train_acc,
+        current_val_acc=self.current_val_acc,
+        best_train_acc=self.best_train_acc,
+        best_val_acc=self.best_val_acc,
+        best_epoch_train_acc=self.best_epoch_train_acc,
+        best_epoch_val_acc=self.best_epoch_val_acc
+      )
 
 
       self._handle_checkpoint(

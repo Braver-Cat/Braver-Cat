@@ -1,7 +1,6 @@
 from rich.console import RenderableType
 from rich.progress import Progress
 from rich.table import Table
-from collections import Iterable
 
 class CustomProgress(Progress):
     def __init__(self, *args, **kwargs):
@@ -10,7 +9,7 @@ class CustomProgress(Progress):
         self.train_col = kwargs["train_col"] if "train_col" in kwargs else "#2a9d8f"
 
 
-    def get_renderables(self) -> Iterable[RenderableType]:
+    def get_renderables(self):
         if hasattr(self, "table"):
             table = self.table
         else:
