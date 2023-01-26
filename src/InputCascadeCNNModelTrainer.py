@@ -11,6 +11,8 @@ import time
 
 import numpy as np
 
+from CrossEntropyLossElasticNet import CrossEntropyLossElasticNet
+
 class InputCascadeCNNModelTrainer():
   
   def __init__(
@@ -29,6 +31,10 @@ class InputCascadeCNNModelTrainer():
     self.learning_rate_scheduler = learning_rate_scheduler
     self.delta_1 = delta_1
     self.delta_2 = delta_2
+    
+    self.loss_fn = CrossEntropyLossElasticNet(
+      delta_1=self.delta_1, delta_2=self.delta_2
+    )
     
     self.batch_size = batch_size
     self.percentage_num_batches = percentage_num_batches,
@@ -78,26 +84,46 @@ class InputCascadeCNNModelTrainer():
       total=self.num_batches_test,
     )
 
-  def _store_checkpoint(self, checkpoint_path_suffix):
-    return 0
+  def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
+    
+    torch.save(
+      {
+        "current_epoch": checkpoint_epoch,
+        
+        "model_state_dict": self.model.state_dict(),
+        "optimizer_state_dict": self.optimizer.state_dict(),
+        
+        "best_epoch_val_acc": self.best_epoch_val_acc,
+        "best_epoch_val_loss": self.best_epoch_val_loss,
+        
+        "best_val_acc": self.best_val_acc,
+        "best_val_loss": self.best_val_loss,
+      }, 
+      f"{self.checkpoint_full_path}{checkpoint_path_suffix}"
+    )
+    
+    return 
     
   def _handle_checkpoint(self, current_epoch, current_val_acc, current_val_loss):
 
     if current_epoch == self.num_epochs or current_epoch % self.checkpoint_step_size:
       self._store_checkpoint(
-        checkpoint_path_suffix=f"_epoch_{current_epoch}"
+        checkpoint_path_suffix=f"_epoch_{current_epoch}",
+        checkpoint_epoch=current_epoch
       )
     
     if current_val_loss < self.best_val_loss:
       self._store_checkpoint(
-        checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_loss"
+        checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_loss",
+        checkpoint_epoch=current_epoch
       )
 
       self.best_epoch_val_loss = current_epoch
 
     if current_val_acc > self.best_val_acc:
       self._store_checkpoint(
-        checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_acc"
+        checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_acc",
+        checkpoint_epoch=current_epoch
       )
 
       self.best_epoch_val_acc = current_epoch
@@ -110,11 +136,13 @@ class InputCascadeCNNModelTrainer():
 
     acc_train, acc_val, acc_test = 0, 0, 0
     loss_train, loss_val = 0, 0
-
+    
     for epoch in range(self.num_epochs):
 
       self.pbar.reset(self.pbar_train) 
       self.pbar.reset(self.pbar_val)
+
+      self.optimizer.zero_grad()
 
       self.model.train()
 
@@ -132,6 +160,10 @@ class InputCascadeCNNModelTrainer():
         prediction = self.model(
           x_local_scale=patch_local_scale, 
           x_global_scale=patch_global_scale
+        )
+
+        loss_train = self.loss_fn(
+          prediction=prediction, label=label_global_scale, model=self.model
         )
 
         self.pbar.update(task_id=self.pbar_train, advance=1)
@@ -159,6 +191,10 @@ class InputCascadeCNNModelTrainer():
           prediction = self.model(
             x_local_scale=patch_local_scale, 
             x_global_scale=patch_global_scale
+          )
+
+          loss_val = self.loss_fn(
+            prediction=prediction, label=label_global_scale, model=self.model
           )
 
           self.pbar.update(task_id=self.pbar_val, advance=1)

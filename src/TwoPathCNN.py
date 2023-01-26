@@ -182,3 +182,29 @@ class TwoPathCNN(nn.Module):
     ### END concatenated path
 
     return x_concat
+  
+  def _get_layer_weights(self, layer):
+
+    layer_weights = []
+
+    for name, param in layer.named_parameters():
+      if param.requires_grad:
+          layer_weights.append(param.data)
+
+    return layer_weights
+
+
+  
+  def get_model_weights(self):
+
+    weights = []
+
+    weights.extend(self._get_layer_weights(self.local_conv_0_maxout_unit_0))
+    weights.extend(self._get_layer_weights(self.local_conv_0_maxout_unit_1))
+    weights.extend(self._get_layer_weights(self.local_conv_1_maxout_unit_0))
+    weights.extend(self._get_layer_weights(self.local_conv_1_maxout_unit_1))
+    weights.extend(self._get_layer_weights(self.global_conv_0_maxout_unit_0))
+    weights.extend(self._get_layer_weights(self.global_conv_0_maxout_unit_1))
+    weights.extend(self._get_layer_weights(self.concat_conv_0))
+
+    return torch.tensor(weights, dtype=torch.float32)

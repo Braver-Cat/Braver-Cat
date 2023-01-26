@@ -366,23 +366,23 @@ def main():
   )
 
 
-  wandb_helper = WandBHelper(
-    project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
-    parsed_args=parsed_args, other_args=other_args
-  )
+  # wandb_helper = WandBHelper(
+  #   project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
+  #   parsed_args=parsed_args, other_args=other_args
+  # )
 
-  wandb_helper.init_run()
+  # wandb_helper.init_run()
 
   model_trainer.train()
 
-  wandb_helper.update_config(
-    config_update={
-      "best_epoch_val_loss": model_trainer.best_epoch_val_loss,
-      "best_epoch_val_acc": model_trainer.best_epoch_val_acc,
-      "best_val_acc": model_trainer.best_val_acc,
-      "best_val_loss": model_trainer.best_val_loss,
-    }
-  )
+  # wandb_helper.update_config(
+  #   config_update={
+  #     "best_epoch_val_loss": model_trainer.best_epoch_val_loss,
+  #     "best_epoch_val_acc": model_trainer.best_epoch_val_acc,
+  #     "best_val_acc": model_trainer.best_val_acc,
+  #     "best_val_loss": model_trainer.best_val_loss,
+  #   }
+  # )
 
   
   
