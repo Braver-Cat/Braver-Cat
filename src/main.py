@@ -1,6 +1,7 @@
 import argparse
 
-from BRATS2013DatasetPatch import BRATS2013DatasetPatch
+# from BRATS2013DatasetPatch import BRATS2013DatasetPatch
+from BRATS2013DatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
 
 from tqdm import tqdm
 
@@ -36,14 +37,24 @@ def parse_cli_args():
   arg_parser = argparse.ArgumentParser()
 
   arg_parser.add_argument(
-    "-i", "--dataset-df-path", action="store", dest="dataset_df_path",
+    "--local-scale-dataset-df-path", action="store", dest="dataset_local_scale_df_path",
     type=str, required=True,
-    help="Path of DataFrame storing the input-output tuples"
+    help="Path of DataFrame storing the input-output tuples for the local scale patches"
   )
   arg_parser.add_argument(
-    "-s", "--patch-size", action="store", dest="patch_size",
+    "--global-scale-dataset-df-path", action="store", dest="dataset_global_scale_df_path",
     type=str, required=True,
-    help="Size of the patch to center around the pixel that must be classified for the segmentation"
+    help="Path of DataFrame storing the input-output tuples for the global scale patches"
+  )
+  arg_parser.add_argument(
+    "--local-scale-patch-size", action="store", dest="patch_size_local_scale",
+    type=str, required=True,
+    help="Size of the patch to center around the pixel that must be classified for the segmentation in the local scale"
+  )
+  arg_parser.add_argument(
+    "--global-scale-patch-size", action="store", dest="patch_size_global_scale",
+    type=str, required=True,
+    help="Size of the patch to center around the pixel that must be classified for the segmentation in the global scale"
   )
   arg_parser.add_argument(
     "-l", "--load-data-in-memory", action="store_true", dest="load_data_in_memory",
@@ -145,21 +156,72 @@ def parse_cli_args():
 
   return parsed_args
 
-def check_patch_size_consistency(patch_size, dataset_df_path):
-
-  if patch_size not in dataset_df_path:
-    print(
-      f"Patch size {patch_size} not present in patch dataframe path: {dataset_df_path}"
-    )
-
-    return False
+def _get_dataset_of_scale(parsed_args, scale):
   
-  return True
+  parsed_args = vars(parsed_args)
+
+  dataset_df_path_parsed_args_key = f"dataset_{scale}_scale_df_path"
+  dataset_train_path = f"{parsed_args[dataset_df_path_parsed_args_key]}/train_labels_df_one_hot.json"
+  dataset_val_path = f"{parsed_args[dataset_df_path_parsed_args_key]}/val_labels_df_one_hot.json"
+  dataset_test_path = f"{parsed_args[dataset_df_path_parsed_args_key]}/test_labels_df_one_hot.json"
+
+  patch_size_parsed_args_key = f"patch_size_{scale}_scale"
+
+  
+
+
 
 def get_datasets(parsed_args):
-  dataset_train_path = f"{parsed_args.dataset_df_path}/train_labels_df_one_hot.json"
-  dataset_val_path = f"{parsed_args.dataset_df_path}/val_labels_df_one_hot.json"
-  dataset_test_path = f"{parsed_args.dataset_df_path}/test_labels_df_one_hot.json"
+
+  global_scale_train_path = f"{parsed_args.dataset_global_scale_df_path}/train_labels_df_one_hot.json"
+  global_scale_val_path = f"{parsed_args.dataset_global_scale_df_path}/val_labels_df_one_hot.json"
+  global_scale_test_path = f"{parsed_args.dataset_global_scale_df_path}/test_labels_df_one_hot.json"
+
+  local_scale_train_path = f"{parsed_args.dataset_local_scale_df_path}/train_labels_df_one_hot.json"
+  local_scale_val_path = f"{parsed_args.dataset_local_scale_df_path}/val_labels_df_one_hot.json"
+  local_scale_test_path = f"{parsed_args.dataset_local_scale_df_path}/test_labels_df_one_hot.json"
+
+  dataset_train = BRATS2013DatasetLocalGlobalScalePatch(
+    local_scale_df_path=local_scale_train_path,
+    local_scale_patch_size=parsed_args.patch_size_local_scale,
+    local_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+
+    global_scale_df_path=global_scale_train_path,
+    global_scale_patch_size=parsed_args.patch_size_global_scale,
+    global_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+
+    stage="train"
+
+  )
+  
+  dataset_val = BRATS2013DatasetLocalGlobalScalePatch(
+    local_scale_df_path=local_scale_val_path,
+    local_scale_patch_size=parsed_args.patch_size_local_scale,
+    local_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+
+    global_scale_df_path=global_scale_val_path,
+    global_scale_patch_size=parsed_args.patch_size_global_scale,
+    global_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+
+    stage="val"
+
+  )
+  
+  dataset_test = BRATS2013DatasetLocalGlobalScalePatch(
+    local_scale_df_path=local_scale_test_path,
+    local_scale_patch_size=parsed_args.patch_size_local_scale,
+    local_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+
+    global_scale_df_path=global_scale_test_path,
+    global_scale_patch_size=parsed_args.patch_size_global_scale,
+    global_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+
+    stage="test"
+
+  )
+  
+  return dataset_train, dataset_val, dataset_test 
+  
 
   dataset_train = BRATS2013DatasetPatch(
     patch_df_path=dataset_train_path, patch_size=parsed_args.patch_size, 
@@ -275,15 +337,9 @@ def main():
   parsed_args = parse_cli_args()
   other_args = dict()
 
-  patch_size_consistency_result = check_patch_size_consistency(
-    patch_size=parsed_args.patch_size, 
-    dataset_df_path=parsed_args.dataset_df_path
-  )
-
-  if not patch_size_consistency_result:
-    exit(patch_size_consistency_result)
-
   dataset_train, dataset_val, dataset_test = get_datasets(parsed_args)
+
+  return 
 
   dl_train, dl_val, dl_test = get_dataloaders(
     dataset_train, dataset_val, dataset_test, parsed_args
@@ -334,7 +390,7 @@ def main():
 
   wandb_helper.init_run()
 
-  model_trainer.train()
+  # model_trainer.train()
 
   wandb_helper.update_config(
     config_update={
@@ -373,11 +429,11 @@ def main():
   # model = TwoPathCNN(num_input_channels=4, num_classes=6)
   # x = torch.randint(10, 99, (16, 4, 33, 33)).float()
 
-  # model = InputCascadeCNN(num_input_channels=4, num_classes=6)
+  model = InputCascadeCNN(num_input_channels=4, num_classes=6)
   
-  # x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
-  # x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
-  # model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
+  x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
+  x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
+  model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
 
   
   

@@ -7,21 +7,36 @@ import numpy as np
 
 from tqdm import tqdm
 
+from rich import print
+
 class BRATS2013DatasetPatch(Dataset):
 
   def __init__(
-      self, patch_df_path, patch_size, load_in_memory, stage
+      self, patch_df_path, patch_size, load_data_in_memory, stage
     ):
     
-    self.patch_df = pd.read_json(patch_df_path)
+    self.patch_df_path = patch_df_path
+    
     self.patch_size = patch_size
+
+    self._check_patch_size_consistency()
+
+    self.patch_df = pd.read_json(self.patch_df_path)
     self.patch_column_name = f"patch_{self.patch_size}_x_{self.patch_size}_img_path"
     self.label_column_name = "patch_label_one_hot"
 
     self.stage = stage
 
-    self.load_in_memory = load_in_memory
+    self.load_data_in_memory = load_data_in_memory
     self.data, self.labels = self._load_data_in_memory()
+
+  def _check_patch_size_consistency(self):
+
+    if self.patch_size not in self.patch_df_path:
+
+      raise ValueError(
+        f"Patch size {self.patch_size} not present in patch dataframe path: {self.patch_df_path}"
+      )
 
 
   def __len__(self):
@@ -29,7 +44,7 @@ class BRATS2013DatasetPatch(Dataset):
 
   def __getitem__(self, idx):
 
-    if self.load_in_memory:
+    if self.load_data_in_memory:
       patch = self.data[idx]
       patch_label = self.labels[idx]
 
@@ -49,7 +64,7 @@ class BRATS2013DatasetPatch(Dataset):
   
   def _load_data_in_memory(self):
 
-    if not self.load_in_memory:
+    if not self.load_data_in_memory:
       return None, None
     
     else:
