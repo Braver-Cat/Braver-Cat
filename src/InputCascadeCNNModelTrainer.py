@@ -82,11 +82,11 @@ class InputCascadeCNNModelTrainer():
     self.best_epoch_val_acc = 0
     self.best_epoch_val_loss = 0
 
-    self.current_train_acc = 0
-    self.current_train_loss = np.inf
+    self.running_train_acc = 0
+    self.running_train_loss = np.inf
     
-    self.current_val_acc = 0
-    self.current_val_loss = np.inf
+    self.running_val_acc = 0
+    self.running_val_loss = np.inf
 
   def _set_pbars(self):
     self.pbar_epochs = self.pbar.add_task(
@@ -125,7 +125,7 @@ class InputCascadeCNNModelTrainer():
     
     return 
     
-  def _handle_checkpoint(self, current_epoch, current_val_acc, current_val_loss):
+  def _handle_checkpoint(self, current_epoch, running_val_acc, running_val_loss):
 
     if current_epoch == self.num_epochs or current_epoch % self.checkpoint_step_size:
       self._store_checkpoint(
@@ -133,7 +133,7 @@ class InputCascadeCNNModelTrainer():
         checkpoint_epoch=current_epoch
       )
     
-    if current_val_loss < self.best_val_loss:
+    if running_val_loss < self.best_val_loss:
       self._store_checkpoint(
         checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_loss",
         checkpoint_epoch=current_epoch
@@ -141,7 +141,7 @@ class InputCascadeCNNModelTrainer():
 
       self.best_epoch_val_loss = current_epoch
 
-    if current_val_acc > self.best_val_acc:
+    if running_val_acc > self.best_val_acc:
       self._store_checkpoint(
         checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_acc",
         checkpoint_epoch=current_epoch
@@ -163,7 +163,8 @@ class InputCascadeCNNModelTrainer():
       self.pbar.reset(self.pbar_train) 
       self.pbar.reset(self.pbar_val)
 
-      self.optimizer.zero_grad()
+      self.running_train_loss = 0
+      self.running_val_loss = 0
 
       self.model.train()
 
@@ -172,17 +173,20 @@ class InputCascadeCNNModelTrainer():
         if (batch_idx > self.num_batches_train):
           break
 
+        self.optimizer.zero_grad()
+
         patch_local_scale = batch_train["local_scale"]["patch"].to(self.device)
         label_local_scale = batch_train["local_scale"]["patch_label"].to(self.device)
         
         patch_global_scale = batch_train["global_scale"]["patch"].to(self.device)
         label_global_scale = batch_train["global_scale"]["patch_label"].to(self.device)
+        label_global_scale = label_global_scale.squeeze(1)
 
         prediction = self.model(
           x_local_scale=patch_local_scale, 
           x_global_scale=patch_global_scale
         )
-        prediction = prediction.squeeze(-1).transpose(dim0=1, dim1=2)
+        prediction = prediction.squeeze(-1).squeeze(-1)
 
         # loss = self.loss_fn_train(
         #   prediction=prediction, label=label_global_scale, model=self.model
@@ -194,18 +198,18 @@ class InputCascadeCNNModelTrainer():
 
         self.optimizer.step()
 
-        self.current_train_loss = loss.item()
-
-        if self.current_train_loss < self.best_train_loss:
-          self.best_train_loss = self.current_train_loss
-          self.best_epoch_train_loss = epoch
+        self.running_train_loss += loss.item() * self.batch_size
 
         self.pbar.update(task_id=self.pbar_train, advance=1)
+      
         self.pbar.update(
           task_id=self.pbar_epochs, 
           advance=( 1/(self.num_batches_tot_train) )
         )
 
+      if self.running_train_loss < self.best_train_loss:
+        self.best_train_loss = self.running_train_loss
+        self.best_epoch_train_loss = epoch
       
       with torch.no_grad():
 
@@ -221,39 +225,40 @@ class InputCascadeCNNModelTrainer():
           
           patch_global_scale = batch_val["global_scale"]["patch"].to(self.device)
           label_global_scale = batch_val["global_scale"]["patch_label"].to(self.device)
+          label_global_scale = label_global_scale.squeeze(1)
 
           prediction = self.model(
             x_local_scale=patch_local_scale, 
             x_global_scale=patch_global_scale
           )
-          prediction = prediction.squeeze(-1).transpose(dim0=1, dim1=2)
+          prediction = prediction.squeeze(-1).squeeze(-1)
 
           # loss = self.loss_fn_val(
           #   prediction=prediction, label=label_global_scale, model=self.model
           # )
           loss = torch.nn.functional.cross_entropy(prediction, label_global_scale)
 
-          self.current_val_loss = loss.item()
-
-          if self.current_val_loss < self.best_val_loss:
-            self.best_val_loss = self.current_val_loss
-            self.best_epoch_val_loss = epoch
+          self.running_val_loss += loss.item() * self.batch_size
 
           self.pbar.update(task_id=self.pbar_val, advance=1)
           self.pbar.update(
             task_id=self.pbar_epochs, 
             advance=( 1/(self.num_batches_tot_train) )
           )
+
+      if self.running_val_loss < self.best_val_loss:
+        self.best_val_loss = self.running_val_loss
+        self.best_epoch_val_loss = epoch
       
       self.pbar.update_table(
-        current_train_loss=self.current_train_loss,
-        current_val_loss=self.current_val_loss,
+        running_train_loss=self.running_train_loss,
+        running_val_loss=self.running_val_loss,
         best_train_loss=self.best_train_loss,
         best_val_loss=self.best_val_loss,
         best_epoch_train_loss=self.best_epoch_train_loss,
         best_epoch_val_loss=self.best_epoch_val_loss,
-        current_train_acc=self.current_train_acc,
-        current_val_acc=self.current_val_acc,
+        running_train_acc=self.running_train_acc,
+        running_val_acc=self.running_val_acc,
         best_train_acc=self.best_train_acc,
         best_val_acc=self.best_val_acc,
         best_epoch_train_acc=self.best_epoch_train_acc,
@@ -262,7 +267,7 @@ class InputCascadeCNNModelTrainer():
 
 
       self._handle_checkpoint(
-        current_epoch=epoch, current_val_acc=acc_val, current_val_loss=loss_val,
+        current_epoch=epoch, running_val_acc=acc_val, running_val_loss=loss_val,
       )
 
     return 0

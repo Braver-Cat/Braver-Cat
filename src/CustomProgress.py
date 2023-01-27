@@ -19,14 +19,14 @@ class CustomProgress(Progress):
         yield task_table
     
     def update_table(self,
-        current_train_loss,
-        current_val_loss,
+        running_train_loss,
+        running_val_loss,
         best_train_loss,
         best_val_loss,
         best_epoch_train_loss,
         best_epoch_val_loss,
-        current_train_acc,
-        current_val_acc,
+        running_train_acc,
+        running_val_acc,
         best_train_acc,
         best_val_acc,
         best_epoch_train_acc,
@@ -40,13 +40,13 @@ class CustomProgress(Progress):
         self.table.add_column("Best Accuracy")
 
         self.table.add_row(
-            "[bold] Train", f"{current_train_loss:.3f}",
+            "[bold] Train", f"{running_train_loss:.3f}",
             f"{best_train_loss:.3f} [{self.train_col} bold]({best_epoch_train_loss})",
-            f"{current_train_acc:.3f}", f"{best_train_acc:.3f} [{self.train_col} bold]({best_epoch_train_acc})"
+            f"{running_train_acc:.3f}", f"{best_train_acc:.3f} [{self.train_col} bold]({best_epoch_train_acc})"
         )
 
         self.table.add_row(
-            "[bold] Validation", f"{current_val_loss:.3f}",
+            "[bold] Validation", f"{running_val_loss:.3f}",
             f"{best_val_loss:.3f} [{self.val_col} bold]({best_epoch_val_loss})",
-            f"{current_val_acc:.3f}", f"{best_val_acc:.3f} [{self.val_col} bold]({best_epoch_val_acc})"
+            f"{running_val_acc:.3f}", f"{best_val_acc:.3f} [{self.val_col} bold]({best_epoch_val_acc})"
         )
