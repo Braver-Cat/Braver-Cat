@@ -34,7 +34,7 @@ class BRATS2013DatasetPatch(Dataset):
 
   def _check_patch_size_consistency(self):
 
-    if self.patch_size not in self.patch_df_path:
+    if str(self.patch_size) not in self.patch_df_path:
 
       raise ValueError(
         f"Patch size {self.patch_size} not present in patch dataframe path: {self.patch_df_path}"
