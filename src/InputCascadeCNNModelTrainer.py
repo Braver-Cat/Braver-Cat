@@ -27,7 +27,7 @@ class InputCascadeCNNModelTrainer():
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
     checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
-    starting_epoch
+    starting_epoch, wandb_helper
   ):
     
     self.device = device
@@ -67,6 +67,8 @@ class InputCascadeCNNModelTrainer():
     
     self.num_epochs = num_epochs
     self.last_epoch = self.starting_epoch + self.num_epochs
+
+    self.wandb_helper = wandb_helper
 
     self.pbar = None
     self.pbar_epochs = None
@@ -194,6 +196,29 @@ class InputCascadeCNNModelTrainer():
   def get_accuracy(self, outputs, labels, total_num_preds):
 
     return self._get_num_correct_preds(outputs, labels) / total_num_preds
+  
+
+  def get_wandb_config_update(self):
+    
+    return {
+      "best_epoch_train_acc" : self.best_epoch_train_acc, 
+      "best_epoch_train_loss" : self.best_epoch_train_loss,
+
+      "best_train_acc" : self.best_train_acc,
+      "best_train_loss" : self.best_train_loss,
+      
+      "best_val_acc" : self.best_val_acc,
+      "best_val_loss" : self.best_val_loss,
+
+      "best_epoch_val_acc" : self.best_epoch_val_acc,
+      "best_epoch_val_loss" : self.best_epoch_val_loss,
+
+      "running_train_acc" : self.running_train_acc,
+      "running_train_loss" : self.running_train_loss,
+      
+      "running_val_acc" : self.running_val_acc,
+      "running_val_loss" : self.running_val_loss
+    }
 
   def _train(self):
 
@@ -333,6 +358,13 @@ class InputCascadeCNNModelTrainer():
         best_epoch_val_acc=self.best_epoch_val_acc
       )
 
+      self.wandb_helper.log(
+        epoch=epoch, 
+        running_loss_train = self.running_train_loss, 
+        running_loss_val=self.running_val_loss,
+        running_train_acc=self.running_train_acc,
+        running_val_acc=self.running_val_acc
+      )
 
       self._handle_checkpoint(
         current_epoch=epoch, 

@@ -283,7 +283,7 @@ def get_model_trainer(
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
     checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
-    starting_epoch
+    starting_epoch, wandb_helper
   ):
 
   if model.cascade_type == "input":
@@ -307,7 +307,8 @@ def get_model_trainer(
       checkpoint_step=checkpoint_step,
       train_id=train_id,
       resumed_from_checkpoint=resumed_from_checkpoint,
-      starting_epoch=starting_epoch
+      starting_epoch=starting_epoch,
+      wandb_helper=wandb_helper
     )
   
 def get_optimizer(
@@ -436,6 +437,11 @@ def main():
     base_path=parsed_args.checkpoint_base_path, train_id=other_args["train_id"]
   )
 
+  wandb_helper = WandBHelper(
+    project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
+    parsed_args=parsed_args, other_args=other_args, model=model
+  )
+
   model_trainer = get_model_trainer(
     device=device,
     model=model,
@@ -451,22 +457,21 @@ def main():
     checkpoint_step=parsed_args.checkpoint_step,
     train_id=other_args["train_id"],
     resumed_from_checkpoint=other_args["resumed_from_checkpoint"],
-    starting_epoch=other_args["starting_epoch"]
-  )
-
-
-  wandb_helper = WandBHelper(
-    project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
-    parsed_args=parsed_args, other_args=other_args
+    starting_epoch=other_args["starting_epoch"],
+    wandb_helper=wandb_helper
   )
 
   wandb_helper.init_run()
+
+  wandb_helper.watch()
 
   model_trainer.train()
 
 
 
-  wandb_helper.update_config(config_update=model.get_wandb_config_update())
+  wandb_helper.update_config(
+    config_update=model_trainer.get_wandb_config_update()
+  )
 
 
 

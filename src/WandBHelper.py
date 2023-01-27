@@ -2,12 +2,15 @@ import wandb
 
 class WandBHelper():
     
-  def __init__(self, project, entity, parsed_args, other_args):
+  def __init__(
+    self, project, entity, parsed_args, other_args, model
+  ):
     
     self.project = project
     self.entity = entity
     self.parsed_args = parsed_args
     self.other_args = other_args
+    self.model = model
 
     self.init_has_been_called = False
 
@@ -35,6 +38,24 @@ class WandBHelper():
   def update_config(self, config_update):
     
     wandb.config.update(config_update)
+
+  def watch(self): 
+    wandb.watch(self.model)
+
+  def log(
+    self, epoch, running_loss_train, running_loss_val, running_train_acc, 
+    running_val_acc
+  ):
+    
+    wandb.log(
+      {
+        "epoch": epoch,
+        "loss/train": running_loss_train,
+        "loss/val": running_loss_val,
+        "accuracy/train": running_train_acc,
+        "accuracy/val": running_val_acc,
+      }
+    )
 
   
 
