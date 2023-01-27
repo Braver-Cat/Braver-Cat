@@ -69,8 +69,8 @@ class InputCascadeCNNModelTrainer():
     self.pbar_val = None
     self.pbar_test = None
 
-    self.best_epoch_train_acc = 0
-    self.best_epoch_train_loss = 0
+    self.best_epoch_train_acc = -1
+    self.best_epoch_train_loss = -1
 
     self.best_train_acc = 0
     self.best_train_loss = np.inf
@@ -78,8 +78,8 @@ class InputCascadeCNNModelTrainer():
     self.best_val_acc = 0
     self.best_val_loss = np.inf
 
-    self.best_epoch_val_acc = 0
-    self.best_epoch_val_loss = 0
+    self.best_epoch_val_acc = -1
+    self.best_epoch_val_loss = -1
 
     self.running_train_acc = 0
     self.running_train_loss = np.inf
@@ -157,13 +157,25 @@ class InputCascadeCNNModelTrainer():
       self.best_epoch_val_acc = current_epoch
 
     return
+  
+  def get_num_correct_preds(self, outputs, labels):
+    
+    output_pred_ind = torch.argmax(outputs, dim=1)
+    labels_ind = torch.argmax(labels, dim=1)
+    
+    matching_mask = (output_pred_ind == labels_ind).float()
+    
+    num_correct_preds = matching_mask.sum()
+    
+    return num_correct_preds
+  
+  def get_accuracy(self, outputs, labels, total_num_preds):
+
+    return self._get_num_correct_preds(outputs, labels) / total_num_preds
 
   def _train(self):
 
     self.model = self.model.to(self.device)
-
-    acc_train, acc_val, acc_test = 0, 0, 0
-    loss_train, loss_val = 0, 0
     
     for epoch in range(self.num_epochs):
 
@@ -172,6 +184,9 @@ class InputCascadeCNNModelTrainer():
 
       self.running_train_loss = 0
       self.running_val_loss = 0
+
+      self.running_train_acc = 0
+      self.running_val_acc = 0
 
       self.model.train()
 
@@ -207,6 +222,12 @@ class InputCascadeCNNModelTrainer():
 
         self.running_train_loss += loss.item() * self.batch_size
 
+        # accumulating the number of correct predictions to divide them by
+        # the total number of preds later to get the accuracy
+        self.running_train_acc += self.get_num_correct_preds(
+          prediction, label_global_scale
+        )
+
         self.pbar.update(task_id=self.pbar_train, advance=1)
       
         self.pbar.update(
@@ -217,6 +238,12 @@ class InputCascadeCNNModelTrainer():
       if self.running_train_loss < self.best_train_loss:
         self.best_train_loss = self.running_train_loss
         self.best_epoch_train_loss = epoch
+
+      self.running_train_acc /= self.batch_size * self.num_batches_train
+
+      if self.best_train_acc < self.running_train_acc:
+        self.best_train_acc = self.running_train_acc
+        self.best_epoch_train_acc = epoch
       
       with torch.no_grad():
 
@@ -247,6 +274,12 @@ class InputCascadeCNNModelTrainer():
 
           self.running_val_loss += loss.item() * self.batch_size
 
+          # accumulating the number of correct predictions to divide them by
+          # the total number of preds later to get the accuracy
+          self.running_val_acc += self.get_num_correct_preds(
+            prediction, label_global_scale
+          )
+
           self.pbar.update(task_id=self.pbar_val, advance=1)
           self.pbar.update(
             task_id=self.pbar_epochs, 
@@ -257,6 +290,12 @@ class InputCascadeCNNModelTrainer():
         self.best_val_loss = self.running_val_loss
         self.best_epoch_val_loss = epoch
       
+      self.running_val_acc /= self.batch_size * self.num_batches_val
+
+      if self.best_val_acc < self.running_val_acc:
+        self.best_val_acc = self.running_val_acc
+        self.best_epoch_val_acc = epoch
+
       self.pbar.update_table(
         running_train_loss=self.running_train_loss,
         running_val_loss=self.running_val_loss,
@@ -274,7 +313,9 @@ class InputCascadeCNNModelTrainer():
 
 
       self._handle_checkpoint(
-        current_epoch=epoch, running_val_acc=acc_val, running_val_loss=loss_val,
+        current_epoch=epoch, 
+        running_val_acc=self.running_val_acc, 
+        running_val_loss=self.running_val_loss,
       )
 
     self.pbar.update(task_id=self.pbar_epochs, completed=self.num_epochs + 1)
@@ -325,7 +366,10 @@ class InputCascadeCNNModelTrainer():
       TextColumn("•"),
       TimeElapsedColumn(),
       TextColumn("•"),
-      TimeRemainingColumn()
+      TimeRemainingColumn(),
+      train_color = PBAR_TRAIN_COLOR, 
+      val_color = PBAR_VAL_COLOR
+      
     ) as progress:
         
       print()

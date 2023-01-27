@@ -4,9 +4,12 @@ from rich.table import Table
 
 class CustomProgress(Progress):
     def __init__(self, *args, **kwargs):
-        super(CustomProgress, self).__init__(*args, **kwargs)
-        self.val_col = kwargs["val_col"] if "val_col" in kwargs else "#065a82"
-        self.train_col = kwargs["train_col"] if "train_col" in kwargs else "#2a9d8f"
+        super(CustomProgress, self).__init__(*args)
+
+        print(kwargs)
+        
+        self.val_color = kwargs["val_color"] if "val_color" in kwargs else "#ff0000"
+        self.train_color = kwargs["train_color"] if "train_color" in kwargs else "#ff0000"
 
 
     def get_renderables(self):
@@ -40,13 +43,13 @@ class CustomProgress(Progress):
         self.table.add_column("Best Accuracy")
 
         self.table.add_row(
-            "[bold] Train", f"{running_train_loss:.3f}",
-            f"{best_train_loss:.3f} [{self.train_col} bold]({best_epoch_train_loss})",
-            f"{running_train_acc:.3f}", f"{best_train_acc:.3f} [{self.train_col} bold]({best_epoch_train_acc})"
+            f"[{self.train_color} bold] Train", f"{running_train_loss:.3f}",
+            f"{best_train_loss:.3f} [{self.train_color} bold]({best_epoch_train_loss})",
+            f"{running_train_acc:.2f}", f"{best_train_acc:.2f} [{self.train_color} bold]({best_epoch_train_acc})"
         )
 
         self.table.add_row(
-            "[bold] Validation", f"{running_val_loss:.3f}",
-            f"{best_val_loss:.3f} [{self.val_col} bold]({best_epoch_val_loss})",
-            f"{running_val_acc:.3f}", f"{best_val_acc:.3f} [{self.val_col} bold]({best_epoch_val_acc})"
+            f"[{self.val_color} bold] Validation", f"{running_val_loss:.3f}",
+            f"{best_val_loss:.3f} [{self.val_color} bold]({best_epoch_val_loss})",
+            f"{running_val_acc:.2f}", f"{best_val_acc:.2f} [{self.val_color} bold]({best_epoch_val_acc})"
         )
