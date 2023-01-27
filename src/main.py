@@ -158,7 +158,7 @@ def parse_cli_args():
   )
   arg_parser.add_argument(
     "--checkpoint-step", action="store", dest="checkpoint_step", type=int, 
-    default=-1, required=False, help="How often to store a checkpoint.\nDefaults to -1, which amounts to no checkpoint saved.\nModel after final epoch is always saved."
+    default=1, required=False, help="How often to store a checkpoint.\nDefaults to -1, which amounts to no checkpoint saved.\nModel after final epoch is always saved."
   )
   
 

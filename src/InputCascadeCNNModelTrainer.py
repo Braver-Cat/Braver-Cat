@@ -2,6 +2,7 @@ import imp
 import torch
 
 from rich.progress import *
+from rich import print
 
 from rich.live import Live
 from rich.table import Table
@@ -104,28 +105,36 @@ class InputCascadeCNNModelTrainer():
     )
 
   def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
+
+    export_path = f"{self.checkpoint_full_path}/checkpoint{checkpoint_path_suffix}"
+
+    print(export_path)
     
-    torch.save(
-      {
-        "current_epoch": checkpoint_epoch,
+    # torch.save(
+    #   {
+    #     "current_epoch": checkpoint_epoch,
         
-        "model_state_dict": self.model.state_dict(),
-        "optimizer_state_dict": self.optimizer.state_dict(),
+    #     "model_state_dict": self.model.state_dict(),
+    #     "optimizer_state_dict": self.optimizer.state_dict(),
         
-        "best_epoch_val_acc": self.best_epoch_val_acc,
-        "best_epoch_val_loss": self.best_epoch_val_loss,
+    #     "best_epoch_val_acc": self.best_epoch_val_acc,
+    #     "best_epoch_val_loss": self.best_epoch_val_loss,
         
-        "best_val_acc": self.best_val_acc,
-        "best_val_loss": self.best_val_loss,
-      }, 
-      f"{self.checkpoint_full_path}{checkpoint_path_suffix}"
-    )
+    #     "best_val_acc": self.best_val_acc,
+    #     "best_val_loss": self.best_val_loss,
+    #   }, 
+    #   f"{self.checkpoint_full_path}{checkpoint_path_suffix}"
+    # )
     
     return 
     
   def _handle_checkpoint(self, current_epoch, running_val_acc, running_val_loss):
 
-    if current_epoch == self.num_epochs or current_epoch % self.checkpoint_step_size:
+    if current_epoch != 0 and (
+      current_epoch == self.num_epochs or 
+      current_epoch % self.checkpoint_step_size == 0
+    ):
+    
       self._store_checkpoint(
         checkpoint_path_suffix=f"_epoch_{current_epoch}",
         checkpoint_epoch=current_epoch
