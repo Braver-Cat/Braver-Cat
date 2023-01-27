@@ -110,9 +110,19 @@ def parse_cli_args():
     help="What learning rate decay factor to use during training via the learning rate scheduler.\nDefaults to 1, as per paper setup"
   )
   arg_parser.add_argument(
-    "--percentage-num-batches", action="store", dest="percentage_num_batches",
-    type=int, required=False, default=100,
-    help="Sets the number of batches to train on.\nUseful in debug.\nDefaults to -1, which ignores the limit."
+    "--num-batches-train", action="store", dest="num_batches_train", type=int, 
+    required=False, default=None,
+    help="Sets the number of batches to use during training step.\nUseful in debug."
+  )
+  arg_parser.add_argument(
+    "--num-batches-val", action="store", dest="num_batches_val", type=int, 
+    required=False, default=None,
+    help="Sets the number of batches to use during val step.\nUseful in debug."
+  )
+  arg_parser.add_argument(
+    "--num-batches-test", action="store", dest="num_batches_test", type=int, 
+    required=False, default=None,
+    help="Sets the number of batches to use during test step.\nUseful in debug."
   )
   arg_parser.add_argument(
     "--elastic-net-delta-1", action="store", 
@@ -260,8 +270,10 @@ def get_device():
   return device
   
 def get_model_trainer(
-    device, model, num_epochs, optimizer, learning_rate_scheduler, batch_size, 
-    percentage_num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
+    device, model, num_epochs, optimizer, learning_rate_scheduler, 
+    batch_size, num_batches_train, num_batches_val, num_batches_test,
+    dl_train, dl_val, dl_test, 
+    delta_1, delta_2,
     checkpoint_full_path, checkpoint_step
   ):
 
@@ -274,7 +286,9 @@ def get_model_trainer(
       optimizer=optimizer, 
       learning_rate_scheduler=learning_rate_scheduler,
       batch_size=batch_size,
-      percentage_num_batches=percentage_num_batches,
+      num_batches_train=num_batches_train,
+      num_batches_val=num_batches_val,
+      num_batches_test=num_batches_test,
       dl_train=dl_train, 
       dl_val=dl_val, 
       dl_test=dl_test,
@@ -327,6 +341,15 @@ def main():
     dataset_train, dataset_val, dataset_test, parsed_args
   )
 
+  if parsed_args.num_batches_train == None:
+    parsed_args.num_batches_train = len(dl_train)
+  
+  if parsed_args.num_batches_val == None:
+    parsed_args.num_batches_val = len(dl_val)
+  
+  if parsed_args.num_batches_test == None:
+    parsed_args.num_batches_test = len(dl_test)
+
   model = get_model(
     cascade_type=parsed_args.cascade_type, 
     num_input_channels=parsed_args.num_input_channels, 
@@ -358,7 +381,9 @@ def main():
     num_epochs=parsed_args.num_epochs,
     optimizer=optimizer, learning_rate_scheduler=learning_rate_scheduler,
     batch_size=parsed_args.batch_size, 
-    percentage_num_batches=parsed_args.percentage_num_batches,
+    num_batches_train=parsed_args.num_batches_train,
+    num_batches_val=parsed_args.num_batches_val,
+    num_batches_test=parsed_args.num_batches_test,
     dl_train=dl_train, dl_val=dl_val, dl_test=dl_test,
     delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2,
     checkpoint_full_path=checkpoint_full_path,

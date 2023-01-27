@@ -22,7 +22,9 @@ class InputCascadeCNNModelTrainer():
   
   def __init__(
     self, device, model, num_epochs, optimizer, learning_rate_scheduler, 
-    batch_size, percentage_num_batches, dl_train, dl_val, dl_test, delta_1, delta_2,
+    batch_size, num_batches_train, num_batches_val, num_batches_test, 
+    dl_train, dl_val, dl_test, 
+    delta_1, delta_2,
     checkpoint_full_path, checkpoint_step
   ):
     
@@ -45,19 +47,15 @@ class InputCascadeCNNModelTrainer():
     )
     
     self.batch_size = batch_size
-    self.percentage_num_batches = percentage_num_batches,
     
     self.dl_train = dl_train 
-    self.num_batches_train = int(len(dl_train) * percentage_num_batches/100)
-    self.num_batches_train += self.num_batches_train == 0
+    self.num_batches_train = num_batches_train
 
     self.dl_val = dl_val
-    self.num_batches_val = int(len(dl_val) * percentage_num_batches/100)
-    self.num_batches_val += self.num_batches_val == 0
+    self.num_batches_val = num_batches_val
     
     self.dl_test = dl_test
-    self.num_batches_test = int(len(dl_test) * percentage_num_batches/100)
-    self.num_batches_test += self.num_batches_test == 0
+    self.num_batches_test = num_batches_test
 
     self.num_batches_tot_train = self.num_batches_train + self.num_batches_val
     
@@ -90,19 +88,19 @@ class InputCascadeCNNModelTrainer():
 
   def _set_pbars(self):
     self.pbar_epochs = self.pbar.add_task(
-      f"[bold {PBAR_EPOCHS_COLOR}] Epochs", start=True, total=self.num_epochs,
+      f"[bold {PBAR_EPOCHS_COLOR}] Epochs", start=True, total=self.num_epochs + 1,
     )
     self.pbar_train = self.pbar.add_task(
       f"[bold {PBAR_TRAIN_COLOR}] Train", start=True, 
-      total=self.num_batches_train,
+      total=self.num_batches_train + 1,
     )
     self.pbar_val = self.pbar.add_task(
       f"[bold {PBAR_VAL_COLOR}] Validation", start=True, 
-      total=self.num_batches_val,
+      total=self.num_batches_val + 1,
     )
     self.pbar_test = self.pbar.add_task(
       description=f"[bold {PBAR_TEST_COLOR}] Test", start=True, 
-      total=self.num_batches_test,
+      total=self.num_batches_test + 1,
     )
 
   def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
@@ -204,7 +202,7 @@ class InputCascadeCNNModelTrainer():
       
         self.pbar.update(
           task_id=self.pbar_epochs, 
-          advance=( 1/(self.num_batches_tot_train) )
+          advance=( 1/(self.num_batches_tot_train + 2) )
         )
 
       if self.running_train_loss < self.best_train_loss:
@@ -243,7 +241,7 @@ class InputCascadeCNNModelTrainer():
           self.pbar.update(task_id=self.pbar_val, advance=1)
           self.pbar.update(
             task_id=self.pbar_epochs, 
-            advance=( 1/(self.num_batches_tot_train) )
+            advance=( 1/(self.num_batches_tot_train + 2) )
           )
 
       if self.running_val_loss < self.best_val_loss:
@@ -269,6 +267,8 @@ class InputCascadeCNNModelTrainer():
       self._handle_checkpoint(
         current_epoch=epoch, running_val_acc=acc_val, running_val_loss=loss_val,
       )
+
+    self.pbar.update(task_id=self.pbar_epochs, completed=self.num_epochs + 1)
 
     return 0
   
