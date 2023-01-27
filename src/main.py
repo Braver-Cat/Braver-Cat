@@ -455,67 +455,22 @@ def main():
   )
 
 
-  # wandb_helper = WandBHelper(
-  #   project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
-  #   parsed_args=parsed_args, other_args=other_args
-  # )
+  wandb_helper = WandBHelper(
+    project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
+    parsed_args=parsed_args, other_args=other_args
+  )
 
-  # wandb_helper.init_run()
+  wandb_helper.init_run()
 
   model_trainer.train()
 
-  # wandb_helper.update_config(
-  #   config_update={
-  #     "best_epoch_val_loss": model_trainer.best_epoch_val_loss,
-  #     "best_epoch_val_acc": model_trainer.best_epoch_val_acc,
-  #     "best_val_acc": model_trainer.best_val_acc,
-  #     "best_val_loss": model_trainer.best_val_loss,
-  #   }
-  # )
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  # wandb_helper.run.finish()
+
+  wandb_helper.update_config(config_update=model.get_wandb_config_update())
 
 
 
-
-
-
-
-
-
-
-
-
-  # model = TwoPathCNN(num_input_channels=4, num_classes=6)
-  # x = torch.randint(10, 99, (16, 4, 33, 33)).float()
-
-  # model = InputCascadeCNN(num_input_channels=4, num_classes=6)
-  
-  # x_small_scale = torch.randint(10, 99, (16, 4, 33, 33)).float()
-  # x_large_scale = torch.randint(10, 99, (16, 4, int(parsed_args.patch_size), int(parsed_args.patch_size))).float()
-  # model(x_small_scale=x_small_scale, x_large_scale=x_large_scale)
-
-  
-  
-  
-  
-  # for x in tqdm(iter(dl_train), total=len(dl_train)):
-  #   print(x["patch"].shape)
-  #   print(x["patch_label"].shape)
-  #   print(x["patch_label"])
-  #   return
+  wandb_helper.run.finish()
 
 
 
