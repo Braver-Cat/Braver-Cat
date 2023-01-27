@@ -26,14 +26,13 @@ class InputCascadeCNNModelTrainer():
     batch_size, num_batches_train, num_batches_val, num_batches_test, 
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
-    checkpoint_full_path, checkpoint_step
+    checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
+    starting_epoch
   ):
     
     self.device = device
 
     self.model = model
-
-    self.num_epochs = num_epochs
 
     self.optimizer = optimizer 
     self.learning_rate_scheduler = learning_rate_scheduler
@@ -62,6 +61,12 @@ class InputCascadeCNNModelTrainer():
     
     self.checkpoint_full_path = checkpoint_full_path
     self.checkpoint_step_size = checkpoint_step
+    self.train_id = train_id
+    self.resumed_from_checkpoint = resumed_from_checkpoint
+    self.starting_epoch = starting_epoch
+    
+    self.num_epochs = num_epochs
+    self.last_epoch = self.starting_epoch + self.num_epochs
 
     self.pbar = None
     self.pbar_epochs = None
@@ -87,9 +92,11 @@ class InputCascadeCNNModelTrainer():
     self.running_val_acc = 0
     self.running_val_loss = np.inf
 
+
   def _set_pbars(self):
     self.pbar_epochs = self.pbar.add_task(
-      f"[bold {PBAR_EPOCHS_COLOR}] Epochs", start=True, total=self.num_epochs + 1,
+      f"[bold {PBAR_EPOCHS_COLOR}] Epochs", start=True, 
+      total=self.last_epoch + 1, completed=self.starting_epoch
     )
     self.pbar_train = self.pbar.add_task(
       f"[bold {PBAR_TRAIN_COLOR}] Train", start=True, 
@@ -106,32 +113,47 @@ class InputCascadeCNNModelTrainer():
 
   def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
 
-    export_path = f"{self.checkpoint_full_path}/checkpoint{checkpoint_path_suffix}"
-
-    print(export_path)
+    export_full_path = f"{self.checkpoint_full_path}/checkpoint{checkpoint_path_suffix}.pth"
     
-    # torch.save(
-    #   {
-    #     "current_epoch": checkpoint_epoch,
+    torch.save(
+      obj={
+      
+        "train_id": self.train_id,
+        "resumed_from_checkpoint": self.resumed_from_checkpoint,
+
+        "checkpoint_epoch": checkpoint_epoch,
         
-    #     "model_state_dict": self.model.state_dict(),
-    #     "optimizer_state_dict": self.optimizer.state_dict(),
+        "model_state_dict": self.model.state_dict(),
+        "optimizer_state_dict": self.optimizer.state_dict(),
+        "learning_rate_scheduler_state_dict": self.learning_rate_scheduler.state_dict(),
+
+        "best_epoch_train_acc": self.best_epoch_train_acc,
+        "best_epoch_train_loss": self.best_epoch_train_loss,
+
+        "best_train_acc": self.best_train_acc,
+        "best_train_loss": self.best_train_loss,
         
-    #     "best_epoch_val_acc": self.best_epoch_val_acc,
-    #     "best_epoch_val_loss": self.best_epoch_val_loss,
+        "best_val_acc": self.best_val_acc,
+        "best_val_loss": self.best_val_loss,
+
+        "best_epoch_val_acc": self.best_epoch_val_acc,
+        "best_epoch_val_loss": self.best_epoch_val_loss,
         
-    #     "best_val_acc": self.best_val_acc,
-    #     "best_val_loss": self.best_val_loss,
-    #   }, 
-    #   f"{self.checkpoint_full_path}{checkpoint_path_suffix}"
-    # )
+        "best_epoch_val_acc": self.best_epoch_val_acc,
+        "best_epoch_val_loss": self.best_epoch_val_loss,
+        
+        "best_val_acc": self.best_val_acc,
+        "best_val_loss": self.best_val_loss,
+      }, 
+      f=export_full_path
+    )
     
     return 
     
   def _handle_checkpoint(self, current_epoch, running_val_acc, running_val_loss):
 
     if current_epoch != 0 and (
-      current_epoch == self.num_epochs or 
+      current_epoch == self.last_epoch or 
       current_epoch % self.checkpoint_step_size == 0
     ):
     
@@ -177,7 +199,7 @@ class InputCascadeCNNModelTrainer():
 
     self.model = self.model.to(self.device)
     
-    for epoch in range(self.num_epochs):
+    for epoch in range(self.starting_epoch, self.last_epoch):
 
       self.pbar.reset(self.pbar_train) 
       self.pbar.reset(self.pbar_val)
@@ -318,7 +340,7 @@ class InputCascadeCNNModelTrainer():
         running_val_loss=self.running_val_loss,
       )
 
-    self.pbar.update(task_id=self.pbar_epochs, completed=self.num_epochs + 1)
+    self.pbar.update(task_id=self.pbar_epochs, completed=self.last_epoch + 1)
 
     return 0
   

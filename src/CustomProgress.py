@@ -6,8 +6,6 @@ class CustomProgress(Progress):
     def __init__(self, *args, **kwargs):
         super(CustomProgress, self).__init__(*args)
 
-        print(kwargs)
-        
         self.val_color = kwargs["val_color"] if "val_color" in kwargs else "#ff0000"
         self.train_color = kwargs["train_color"] if "train_color" in kwargs else "#ff0000"
 

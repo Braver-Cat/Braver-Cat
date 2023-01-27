@@ -20,12 +20,13 @@ from datetime import datetime
 
 import os
 
+from rich import print
+
 DEFAULT_NUM_INPUT_CHANNELS = 4
 DEFAULT_NUM_CLASSES = 6
 
-WARNING_COLOR ='\033[91m'
-METHOD_COLOR = '\033[94m'
-BOLD = '\033[1m'
+WARNING_COLOR = "#DAA520"
+METHOD_COLOR = "#191970"
 
 GPU_NAME = "GeForce"
 
@@ -160,6 +161,11 @@ def parse_cli_args():
     "--checkpoint-step", action="store", dest="checkpoint_step", type=int, 
     default=1, required=False, help="How often to store a checkpoint.\nDefaults to -1, which amounts to no checkpoint saved.\nModel after final epoch is always saved."
   )
+  arg_parser.add_argument(
+    "--load-checkpoint", action="store", dest="checkpoint_to_load_path", 
+    type=str, default=None, 
+    help="Path for the .pth file storing a checkpoint to load"
+  )
   
 
   parsed_args = arg_parser.parse_args()
@@ -248,13 +254,13 @@ def get_dataloaders(dataset_train, dataset_val, dataset_test, parsed_args):
 
   return dl_train, dl_val, dl_test
 
-def get_model(cascade_type, num_input_channels, num_classes, dropout):
+def get_model(cascade_type, num_input_channels, num_classes, dropout, device):
 
   if cascade_type == "input":
     return InputCascadeCNN(
       num_input_channels=num_input_channels, num_classes=num_classes, 
       dropout=dropout
-    )
+    ).to(device)
   
 def get_device():
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -264,7 +270,9 @@ def get_device():
   
 
   if GPU_NAME not in current_device_name:
-    print(f"{METHOD_COLOR}{BOLD}main: {BOLD}" + f"{WARNING_COLOR}[WARNING] Unable to use GPU as PyTorch device!")
+    print(
+      f"[bold {METHOD_COLOR}] main: [{WARNING_COLOR}] [WARNING] Unable to use GPU as PyTorch device!"
+    )
 
 
   return device
@@ -274,7 +282,8 @@ def get_model_trainer(
     batch_size, num_batches_train, num_batches_val, num_batches_test,
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
-    checkpoint_full_path, checkpoint_step
+    checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
+    starting_epoch
   ):
 
   if model.cascade_type == "input":
@@ -296,6 +305,9 @@ def get_model_trainer(
       delta_2=delta_2,
       checkpoint_full_path=checkpoint_full_path,
       checkpoint_step=checkpoint_step,
+      train_id=train_id,
+      resumed_from_checkpoint=resumed_from_checkpoint,
+      starting_epoch=starting_epoch
     )
   
 def get_optimizer(
@@ -330,6 +342,44 @@ def get_checkpoint_full_path(base_path, train_id):
   
   return checkpoint_full_path
 
+def load_checkpoint_from_disk(checkpoint_to_load_path):
+  
+  checkpoint_from_disk = None 
+  resumed_from_checkpoint = None 
+  checkpoint_epoch = 0
+  
+  if checkpoint_to_load_path is not None:
+    checkpoint_from_disk = torch.load(checkpoint_to_load_path)
+
+    resumed_from_checkpoint = checkpoint_to_load_path
+
+    checkpoint_epoch = checkpoint_from_disk["checkpoint_epoch"]
+
+  return checkpoint_from_disk, resumed_from_checkpoint, checkpoint_epoch
+
+def populate_state_dicts(
+  checkpoint_from_disk, resumed_from_checkpoint, model, optimizer, 
+  learning_rate_scheduler
+):
+    
+  if checkpoint_from_disk is not None:
+
+    print(
+      f"[bold {METHOD_COLOR}] main: [/bold {METHOD_COLOR}]"
+      f"[#00000] loading checkpoint {resumed_from_checkpoint}"
+    )
+    model.load_state_dict(state_dict=checkpoint_from_disk["model_state_dict"])
+    
+    optimizer.load_state_dict(
+      state_dict=checkpoint_from_disk["optimizer_state_dict"]
+    )
+
+    learning_rate_scheduler.load_state_dict(
+      state_dict=checkpoint_from_disk["learning_rate_scheduler_state_dict"]
+    )
+
+  return model, optimizer, learning_rate_scheduler
+
 
 def main():
   parsed_args = parse_cli_args()
@@ -350,11 +400,20 @@ def main():
   if parsed_args.num_batches_test == None:
     parsed_args.num_batches_test = len(dl_test)
 
+  ( 
+    checkpoint_from_disk, 
+    other_args["resumed_from_checkpoint"], 
+    other_args["starting_epoch"]
+  ) = load_checkpoint_from_disk(parsed_args.checkpoint_to_load_path)
+
+  device = get_device()
+
   model = get_model(
     cascade_type=parsed_args.cascade_type, 
     num_input_channels=parsed_args.num_input_channels, 
     num_classes=parsed_args.num_classes,
-    dropout=parsed_args.dropout
+    dropout=parsed_args.dropout, 
+    device=device
   )
 
   optimizer, learning_rate_scheduler = get_optimizer(
@@ -366,14 +425,16 @@ def main():
     momentum=parsed_args.momentum, 
   )
 
+  model, optimizer, learning_rate_scheduler = populate_state_dicts(
+    checkpoint_from_disk, other_args["resumed_from_checkpoint"], model, 
+    optimizer, learning_rate_scheduler
+  )
 
   other_args["train_id"] = get_train_id()
   
   checkpoint_full_path = get_checkpoint_full_path(
     base_path=parsed_args.checkpoint_base_path, train_id=other_args["train_id"]
   )
-  
-  device = get_device()
 
   model_trainer = get_model_trainer(
     device=device,
@@ -388,6 +449,9 @@ def main():
     delta_1=parsed_args.delta_1, delta_2=parsed_args.delta_2,
     checkpoint_full_path=checkpoint_full_path,
     checkpoint_step=parsed_args.checkpoint_step,
+    train_id=other_args["train_id"],
+    resumed_from_checkpoint=other_args["resumed_from_checkpoint"],
+    starting_epoch=other_args["starting_epoch"]
   )
 
 
