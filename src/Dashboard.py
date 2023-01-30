@@ -15,6 +15,7 @@ class Dashboard():
     self.train_losses = []
     self.val_losses = []
 
+    self.live = None
     self.layout = Layout()
     self.best_dict = {
       "train": {
