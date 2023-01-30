@@ -44,7 +44,7 @@ class WandBHelper():
 
   def log(
     self, epoch, running_loss_train, running_loss_val, running_train_acc, 
-    running_val_acc
+    running_val_acc, learning_rate
   ):
     
     wandb.log(
@@ -54,6 +54,7 @@ class WandBHelper():
         "loss/val": running_loss_val,
         "accuracy/train": running_train_acc,
         "accuracy/val": running_val_acc,
+        "train/lr": learning_rate
       }
     )
 
