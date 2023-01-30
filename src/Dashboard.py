@@ -8,6 +8,8 @@ import asciichartpy as acp
 
 class Dashboard():
   def __init__(self, params: dict):
+    self.params = params
+
     self.current_epoch = 0
     self.to_print = []
     self.max_row_print = 40
