@@ -291,6 +291,8 @@ class InputCascadeCNNModelTrainer():
       if self.best_train_acc < self.running_train_acc:
         self.best_train_acc = self.running_train_acc
         self.best_epoch_train_acc = epoch
+
+      self.learning_rate_scheduler.step()
       
       with torch.no_grad():
 
