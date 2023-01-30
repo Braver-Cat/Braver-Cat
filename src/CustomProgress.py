@@ -24,6 +24,8 @@ class CustomProgress(Progress):
         running_val_loss,
         best_train_loss,
         best_val_loss,
+        delta_train_loss, 
+        delta_val_loss,
         best_epoch_train_loss,
         best_epoch_val_loss,
         running_train_acc,
@@ -37,17 +39,24 @@ class CustomProgress(Progress):
         self.table.add_column("Stage")
         self.table.add_column("Current Loss")
         self.table.add_column("Best Loss")
+        self.table.add_column("Best Loss delta")
         self.table.add_column("Current Accuracy")
         self.table.add_column("Best Accuracy")
 
         self.table.add_row(
-            f"[{self.train_color} bold] Train", f"{running_train_loss:.3f}",
+            f"[{self.train_color} bold] Train", 
+            f"{running_train_loss:.3f}",
             f"{best_train_loss:.3f} [{self.train_color} bold]({best_epoch_train_loss})",
-            f"{running_train_acc:.2f}", f"{best_train_acc:.2f} [{self.train_color} bold]({best_epoch_train_acc})"
+            f"{delta_train_loss:.3f}",
+            f"{running_train_acc:.2f}", 
+            f"{best_train_acc:.2f} [{self.train_color} bold]({best_epoch_train_acc})"
         )
 
         self.table.add_row(
-            f"[{self.val_color} bold] Validation", f"{running_val_loss:.3f}",
+            f"[{self.val_color} bold] Validation", 
+            f"{running_val_loss:.3f}",
             f"{best_val_loss:.3f} [{self.val_color} bold]({best_epoch_val_loss})",
-            f"{running_val_acc:.2f}", f"{best_val_acc:.2f} [{self.val_color} bold]({best_epoch_val_acc})"
+            f"{delta_val_loss:.3f}",
+            f"{running_val_acc:.2f}", 
+            f"{best_val_acc:.2f} [{self.val_color} bold]({best_epoch_val_acc})"
         )

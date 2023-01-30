@@ -22,6 +22,8 @@ import os
 
 from rich import print
 
+import json
+
 DEFAULT_NUM_INPUT_CHANNELS = 4
 DEFAULT_NUM_CLASSES = 6
 
@@ -56,6 +58,10 @@ def parse_cli_args():
     "--global-scale-patch-size", action="store", dest="patch_size_global_scale",
     type=str, required=True,
     help="Size of the patch to center around the pixel that must be classified for the segmentation in the global scale"
+  )
+  arg_parser.add_argument(
+    "--standardize", action="store_true", dest="standardize",
+    help="Whether to standardize data while training"
   )
   arg_parser.add_argument(
     "-l", "--load-data-in-memory", action="store_true", dest="load_data_in_memory",
@@ -185,6 +191,12 @@ def _get_dataset_of_scale(parsed_args, scale):
 
   
 
+def load_mean_std(mean_std_json_path):
+  f = open(mean_std_json_path)
+
+  mean_std_json = json.load(f)
+
+  return torch.tensor(mean_std_json["mean"]), torch.tensor(mean_std_json["std"])
 
 
 def get_datasets(parsed_args):
@@ -197,14 +209,33 @@ def get_datasets(parsed_args):
   local_scale_val_path = f"{parsed_args.dataset_local_scale_df_path}/val_labels_df_one_hot.json"
   local_scale_test_path = f"{parsed_args.dataset_local_scale_df_path}/test_labels_df_one_hot.json"
 
+  local_scale_mean = torch.tensor(0)
+  local_scale_std = torch.tensor(1)
+  
+  global_scale_mean = torch.tensor(0)
+  global_scale_std = torch.tensor(1)
+
+  if parsed_args.standardize:
+
+    local_scale_mean, local_scale_std = load_mean_std(
+      f"{parsed_args.dataset_local_scale_df_path}/mean_std.json"
+    )
+    
+    global_scale_mean, global_scale_std = load_mean_std(
+      f"{parsed_args.dataset_global_scale_df_path}/mean_std.json"
+    )
+    
   dataset_train = BRATS2013DatasetLocalGlobalScalePatch(
     local_scale_df_path=local_scale_train_path,
     local_scale_patch_size=parsed_args.patch_size_local_scale,
     local_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+    local_scale_mean=local_scale_mean, local_scale_std=local_scale_std,
 
     global_scale_df_path=global_scale_train_path,
     global_scale_patch_size=parsed_args.patch_size_global_scale,
     global_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+    global_scale_mean=global_scale_mean, global_scale_std=global_scale_std,
+
 
     stage="train"
 
@@ -214,10 +245,12 @@ def get_datasets(parsed_args):
     local_scale_df_path=local_scale_val_path,
     local_scale_patch_size=parsed_args.patch_size_local_scale,
     local_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+    local_scale_mean=local_scale_mean, local_scale_std=local_scale_std,
 
     global_scale_df_path=global_scale_val_path,
     global_scale_patch_size=parsed_args.patch_size_global_scale,
     global_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+    global_scale_mean=global_scale_mean, global_scale_std=global_scale_std,
 
     stage="val"
 
@@ -227,10 +260,12 @@ def get_datasets(parsed_args):
     local_scale_df_path=local_scale_test_path,
     local_scale_patch_size=parsed_args.patch_size_local_scale,
     local_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+    local_scale_mean=local_scale_mean, local_scale_std=local_scale_std,
 
     global_scale_df_path=global_scale_test_path,
     global_scale_patch_size=parsed_args.patch_size_global_scale,
     global_scale_load_data_in_memory=parsed_args.load_data_in_memory,
+    global_scale_mean=global_scale_mean, global_scale_std=global_scale_std,
 
     stage="test"
 
@@ -437,6 +472,8 @@ def main():
     base_path=parsed_args.checkpoint_base_path, train_id=other_args["train_id"]
   )
 
+  wandb_helper = None
+  
   wandb_helper = WandBHelper(
     project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
     parsed_args=parsed_args, other_args=other_args, model=model

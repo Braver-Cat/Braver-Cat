@@ -14,7 +14,8 @@ DEFAULT_TENSOR_DTYPE = torch.float32
 class BRATS2013DatasetPatch(Dataset):
 
   def __init__(
-      self, patch_df_path, patch_size, load_data_in_memory, stage
+      self, patch_df_path, patch_size, load_data_in_memory, stage, 
+      mean=0, std=1
     ):
     
     self.patch_df_path = patch_df_path
@@ -31,6 +32,8 @@ class BRATS2013DatasetPatch(Dataset):
 
     self.load_data_in_memory = load_data_in_memory
     self.data, self.labels = self._load_data_in_memory()
+
+    self.mean, self.std = mean, std
 
   def _check_patch_size_consistency(self):
 
@@ -67,7 +70,9 @@ class BRATS2013DatasetPatch(Dataset):
 
     return {
       "patch": patch,
-      "patch_label": patch_label
+      "patch_label": patch_label,
+      "mean": self.mean,
+      "std": self.std
     }
   
   def _load_data_in_memory(self):

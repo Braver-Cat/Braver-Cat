@@ -17,18 +17,22 @@ class BRATS2013DatasetLocalGlobalScalePatch(Dataset):
       self, 
       local_scale_df_path, global_scale_df_path,
       local_scale_patch_size, global_scale_patch_size, 
+      local_scale_mean, local_scale_std,
       global_scale_load_data_in_memory, local_scale_load_data_in_memory, 
+      global_scale_mean, global_scale_std,
       stage
     ):
 
     self.local_scale_dataset = BRATS2013DatasetPatch(
       patch_df_path=local_scale_df_path, patch_size=local_scale_patch_size,
-      load_data_in_memory=local_scale_load_data_in_memory, stage=stage
+      load_data_in_memory=local_scale_load_data_in_memory, stage=stage,
+      mean=local_scale_mean, std=local_scale_std
     )
     
     self.global_scale_dataset = BRATS2013DatasetPatch(
       patch_df_path=global_scale_df_path, patch_size=global_scale_patch_size,
-      load_data_in_memory=global_scale_load_data_in_memory, stage=stage
+      load_data_in_memory=global_scale_load_data_in_memory, stage=stage,
+      mean=global_scale_mean, std=global_scale_std
     )
 
     self._check_datasets_lens()

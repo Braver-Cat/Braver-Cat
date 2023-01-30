@@ -81,9 +81,11 @@ class InputCascadeCNNModelTrainer():
 
     self.best_train_acc = 0
     self.best_train_loss = np.inf
+    self.delta_train_loss = 0
     
     self.best_val_acc = 0
     self.best_val_loss = np.inf
+    self.delta_val_loss = 0
 
     self.best_epoch_val_acc = -1
     self.best_epoch_val_loss = -1
@@ -152,10 +154,12 @@ class InputCascadeCNNModelTrainer():
     
     return 
     
-  def _handle_checkpoint(self, current_epoch, running_val_acc, running_val_loss):
+  def _handle_checkpoint(
+      self, current_epoch, trigger_export_by_acc, trigger_export_by_loss
+    ):
 
     if current_epoch != 0 and (
-      current_epoch == self.last_epoch or 
+      current_epoch == self.last_epoch - 1 or 
       current_epoch % self.checkpoint_step_size == 0
     ):
     
@@ -164,7 +168,7 @@ class InputCascadeCNNModelTrainer():
         checkpoint_epoch=current_epoch
       )
     
-    if running_val_loss < self.best_val_loss:
+    if trigger_export_by_loss:
       self._store_checkpoint(
         checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_loss",
         checkpoint_epoch=current_epoch
@@ -172,7 +176,7 @@ class InputCascadeCNNModelTrainer():
 
       self.best_epoch_val_loss = current_epoch
 
-    if running_val_acc > self.best_val_acc:
+    if trigger_export_by_acc:
       self._store_checkpoint(
         checkpoint_path_suffix=f"_epoch_{current_epoch}_best_val_acc",
         checkpoint_epoch=current_epoch
@@ -251,6 +255,19 @@ class InputCascadeCNNModelTrainer():
         label_global_scale = batch_train["global_scale"]["patch_label"].to(self.device)
         label_global_scale = label_global_scale.squeeze(1)
 
+        local_scale_mean = batch_train["local_scale"]["mean"].to(self.device)
+        local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
+        local_scale_std = batch_train["local_scale"]["std"].to(self.device)
+        local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
+        
+        global_scale_mean = batch_train["global_scale"]["mean"].to(self.device)
+        global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
+        global_scale_std = batch_train["global_scale"]["std"].to(self.device)
+        global_scale_std = global_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+        patch_local_scale = (patch_local_scale - local_scale_mean) / local_scale_std
+        patch_global_scale = (patch_global_scale - global_scale_mean) / global_scale_std
+
         prediction = self.model(
           x_local_scale=patch_local_scale, 
           x_global_scale=patch_global_scale
@@ -283,6 +300,7 @@ class InputCascadeCNNModelTrainer():
         )
 
       if self.running_train_loss < self.best_train_loss:
+        self.delta_train_loss = self.running_train_loss - self.best_train_loss
         self.best_train_loss = self.running_train_loss
         self.best_epoch_train_loss = epoch
 
@@ -298,6 +316,9 @@ class InputCascadeCNNModelTrainer():
 
         self.model.eval()
 
+        trigger_export_by_acc = False
+        trigger_export_by_loss = False
+
         for batch_idx, batch_val in enumerate(self.dl_val):
 
           if (batch_idx > self.num_batches_val):
@@ -309,6 +330,19 @@ class InputCascadeCNNModelTrainer():
           patch_global_scale = batch_val["global_scale"]["patch"].to(self.device)
           label_global_scale = batch_val["global_scale"]["patch_label"].to(self.device)
           label_global_scale = label_global_scale.squeeze(1)
+
+          local_scale_mean = batch_val["local_scale"]["mean"].to(self.device)
+          local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
+          local_scale_std = batch_val["local_scale"]["std"].to(self.device)
+          local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
+          
+          global_scale_mean = batch_val["global_scale"]["mean"].to(self.device)
+          global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
+          global_scale_std = batch_val["global_scale"]["std"].to(self.device)
+          global_scale_std = global_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+          patch_local_scale = (patch_local_scale - local_scale_mean) / local_scale_std
+          patch_global_scale = (patch_global_scale - global_scale_mean) / global_scale_std
 
           prediction = self.model(
             x_local_scale=patch_local_scale, 
@@ -336,20 +370,25 @@ class InputCascadeCNNModelTrainer():
           )
 
       if self.running_val_loss < self.best_val_loss:
+        self.delta_val_loss = self.running_val_loss - self.best_val_loss
         self.best_val_loss = self.running_val_loss
         self.best_epoch_val_loss = epoch
+        trigger_export_by_loss = True
       
       self.running_val_acc /= self.batch_size * self.num_batches_val
 
       if self.best_val_acc < self.running_val_acc:
         self.best_val_acc = self.running_val_acc
         self.best_epoch_val_acc = epoch
+        trigger_export_by_acc = True
 
       self.pbar.update_table(
         running_train_loss=self.running_train_loss,
         running_val_loss=self.running_val_loss,
         best_train_loss=self.best_train_loss,
         best_val_loss=self.best_val_loss,
+        delta_train_loss=self.delta_train_loss,
+        delta_val_loss=self.delta_val_loss,
         best_epoch_train_loss=self.best_epoch_train_loss,
         best_epoch_val_loss=self.best_epoch_val_loss,
         running_train_acc=self.running_train_acc,
@@ -360,19 +399,23 @@ class InputCascadeCNNModelTrainer():
         best_epoch_val_acc=self.best_epoch_val_acc
       )
 
-      self.wandb_helper.log(
-        epoch=epoch, 
-        running_loss_train = self.running_train_loss, 
-        running_loss_val=self.running_val_loss,
-        running_train_acc=self.running_train_acc,
-        running_val_acc=self.running_val_acc
-      )
+      if self.wandb_helper is not None:
+        self.wandb_helper.log(
+          epoch=epoch, 
+          running_loss_train = self.running_train_loss, 
+          running_loss_val=self.running_val_loss,
+          running_train_acc=self.running_train_acc,
+          running_val_acc=self.running_val_acc,
+          learning_rate=self.learning_rate_scheduler.get_last_lr()[0]
+        )
 
       self._handle_checkpoint(
         current_epoch=epoch, 
-        running_val_acc=self.running_val_acc, 
-        running_val_loss=self.running_val_loss,
+        trigger_export_by_acc=trigger_export_by_acc,
+        trigger_export_by_loss=trigger_export_by_loss
       )
+
+      
 
     self.pbar.update(task_id=self.pbar_epochs, completed=self.last_epoch + 1)
 
@@ -394,6 +437,19 @@ class InputCascadeCNNModelTrainer():
         
         patch_global_scale = batch_test["global_scale"]["patch"].to(self.device)
         label_global_scale = batch_test["global_scale"]["patch_label"].to(self.device)
+
+        local_scale_mean = batch_test["local_scale"]["mean"].to(self.device)
+        local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
+        local_scale_std = batch_test["local_scale"]["std"].to(self.device)
+        local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
+        
+        global_scale_mean = batch_test["global_scale"]["mean"].to(self.device)
+        global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
+        global_scale_std = batch_test["global_scale"]["std"].to(self.device)
+        global_scale_std = global_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+        patch_local_scale = (patch_local_scale - local_scale_mean) / local_scale_std
+        patch_global_scale = (patch_global_scale - global_scale_mean) / global_scale_std
 
         prediction = self.model(
           x_local_scale=patch_local_scale, 
