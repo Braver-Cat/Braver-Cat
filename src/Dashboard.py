@@ -4,10 +4,18 @@ from rich.progress import *
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.layout import Layout
 from rich.console import Console
+from rich import print
 import asciichartpy as acp
+import numpy as np
+import keyboard
+
+PBAR_EPOCHS_COLOR = "#830a48"
+PBAR_TRAIN_COLOR = "#2a9d8f"
+PBAR_VAL_COLOR = "#065a82"
+PBAR_TEST_COLOR = "#00008B"
 
 class Dashboard():
-  def __init__(self, params: dict):
+  def __init__(self, params: dict, key_closer = False):
     self.params = params
 
     self.current_epoch = 0
@@ -18,15 +26,17 @@ class Dashboard():
     self.val_losses = []
 
     self.live = None
+    self.stopped = False
+    self.key_closer = key_closer
     self.layout = Layout()
     self.best_dict = {
       "train": {
-        "loss": (-1, -1),
-        "accuracy": (-1, -1)
+        "loss": (np.inf, 0, -1),
+        "accuracy": (-1, 0, -1)
       },
       "val": {
-        "loss": (-1, -1),
-        "accuracy": (-1, -1)
+        "loss": (np.inf, 0, -1),
+        "accuracy": (-1, 0, -1)
       }
     }
 
@@ -53,6 +63,8 @@ class Dashboard():
     self.build_progress_bars()
     self.build_bests()
     self.init_out_panel()
+    if self.key_closer:
+      self.init_keyboard()
   
   def println(self, out):
     self.to_print.append(str(out))
@@ -67,13 +79,13 @@ class Dashboard():
       Layout(name="progress_bars", size=6),
     )
     self.layout["main"].split(
-      Layout(name="side", size=30),
+      Layout(name="side", size=50),
       Layout(name="body", ratio=4),
       splitter="row"
     )
     self.layout["side"].split(
       Layout(name="params"),
-      Layout(name="bests", size=8)
+      Layout(name="bests")
     )
     self.layout["body"].split(
       Layout(name="graphes"),
@@ -91,17 +103,32 @@ class Dashboard():
     )
     
   
+  def init_keyboard(self):
+    keyboard.add_hotkey("space", lambda: self.stop() if not self.stopped else self.start())
+
+  def kill(self):
+    if self.key_closer:
+      keyboard.remove_hotkey("space")
+
   ## Bar plotting stuff
 
   def build_progress_bars(self):
     self.layout["progress_bars"].update(Panel(self.progress, title="Progress bars"))
   
-  def epoch_step(self):
+  def epoch_step(self, train_loss, val_loss, train_acc, val_acc):
     self.current_epoch += 1
     self.progress.update(self.epochs_bar, completed=self.current_epoch)
     if self.current_epoch != self.params["n_epochs"]:
       self.progress.reset(self.train_bar)
       self.progress.reset(self.val_bar)
+    out_str = f"Current train loss: {train_loss:.3f}\n"
+    out_str += f"Current val loss: {val_loss:.3f}\n"
+    out_str += f"Current train acc: {train_acc:.2f}\n"
+    out_str += f"Current val acc: {val_acc:.2f}\n"
+    out_str += self.build_bests(train_loss, val_loss, train_acc, val_acc)
+    self.layout["bests"].update(Panel(out_str, title="Parameters", padding=(1)))
+
+
   
   def train_step(self):
     epoch_advance = 1 / (self.params["train_batches"] + self.params["val_batches"])
@@ -125,21 +152,30 @@ class Dashboard():
   ## Show and update best scores
   
   def build_bests(self, train_loss=None, val_loss=None, train_acc=None, val_acc=None):
-    if train_loss != None:
-      self.best_dict["train"]["loss"] = (train_loss, self.current_epoch)
-    if val_loss != None:
-      self.best_dict["val"]["loss"] = (val_loss, self.current_epoch)
-    if train_acc != None:
-      self.best_dict["train"]["accuracy"] = (train_acc, self.current_epoch)
-    if val_acc != None:
-      self.best_dict["val"]["accuracy"] = (val_acc, self.current_epoch)
+    if train_loss != None and train_loss < self.best_dict["train"]["loss"][0]:
+      delta = self.best_dict["train"]["loss"][0] - train_loss 
+      self.best_dict["train"]["loss"] = (train_loss, delta, self.current_epoch)
+    if val_loss != None and val_loss < self.best_dict["val"]["loss"][0]:
+      delta = self.best_dict["val"]["loss"][0] - val_loss 
+      self.best_dict["val"]["loss"] = (val_loss, delta, self.current_epoch)
+    if train_acc != None and train_acc > self.best_dict["train"]["accuracy"][0]:
+      delta = self.best_dict["train"]["accuracy"][0] - train_acc 
+      self.best_dict["train"]["accuracy"] = (train_acc, delta, self.current_epoch)
+    if val_acc != None and val_acc > self.best_dict["val"]["accuracy"][0]:
+      delta = self.best_dict["val"]["accuracy"][0] - val_acc 
+      self.best_dict["val"]["accuracy"] = (val_acc, delta, self.current_epoch)
     
     train_loss_lst = self.best_dict["train"]["loss"]
     val_loss_lst = self.best_dict["val"]["loss"]
     train_acc_lst = self.best_dict["train"]["accuracy"]
     val_acc_lst = self.best_dict["val"]["accuracy"]
-    best_str = f"Train loss: {train_loss_lst[0]} ({train_loss_lst[1]})\nValidation loss: {val_loss_lst[0]} ({val_loss_lst[1]})\nTrain acc: {train_acc_lst[0]} ({train_acc_lst[1]})\nValidation acc: {val_acc_lst[0]} ({val_acc_lst[1]})"
-    self.layout["bests"].update(Panel(best_str, title="Best scores", padding=(1)))
+    best_str = ""
+    best_str += f"Best train loss: {train_loss_lst[0]:.3f} {train_loss_lst[1]:.3f} ({train_loss_lst[2]})\n"
+    best_str += f"Best validation loss: {val_loss_lst[0]:.3f} {val_loss_lst[1]:.3f} ({val_loss_lst[2]})\n"
+    best_str += f"Best train acc: {train_acc_lst[0]:.2f} {train_acc_lst[1]:.2f} ({train_acc_lst[2]})\n"
+    best_str += f"Best validation acc: {val_acc_lst[0]:.2f} {val_acc_lst[1]:.2f} ({val_acc_lst[2]})\n"
+
+    return best_str
 
   # Plotting graph
 
@@ -153,7 +189,9 @@ class Dashboard():
   
   
   def start(self):
+    self.stopped = False
     if self.live != None:
+      self.live.start()
       return False
     self.live = Live(self.layout, screen=True)
     self.live.start()
@@ -162,9 +200,10 @@ class Dashboard():
   def stop(self):
     if self.live == None:
       return False
-    self.live.console.clear()
     self.live.stop()
-    return True
+    self.live.console.clear()
+    self.stopped = True
+    return self.live.renderable
 
 @dataclass
 class Output_renderable:
