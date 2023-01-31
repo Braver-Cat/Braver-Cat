@@ -1,5 +1,7 @@
 import argparse
 
+from parso import parse
+
 # from BRATS2013DatasetPatch import BRATS2013DatasetPatch
 from BRATS2013DatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
 
@@ -171,6 +173,10 @@ def parse_cli_args():
     "--load-checkpoint", action="store", dest="checkpoint_to_load_path", 
     type=str, default=None, 
     help="Path for the .pth file storing a checkpoint to load"
+  )
+  arg_parser.add_argument(
+    "--disable-wandb", action="store_true", 
+    help="Whether to standardize data while training"
   )
   
 
@@ -472,12 +478,13 @@ def main():
     base_path=parsed_args.checkpoint_base_path, train_id=other_args["train_id"]
   )
 
-  wandb_helper = None
-  
-  wandb_helper = WandBHelper(
-    project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
-    parsed_args=parsed_args, other_args=other_args, model=model
-  )
+  if parsed_args.disable_wandb:
+    wandb_helper = None
+  else:
+    wandb_helper = WandBHelper(
+      project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
+      parsed_args=parsed_args, other_args=other_args, model=model
+    )
 
   model_trainer = get_model_trainer(
     device=device,
@@ -497,22 +504,22 @@ def main():
     starting_epoch=other_args["starting_epoch"],
     wandb_helper=wandb_helper
   )
+  if not parsed_args.disable_wandb:  
+    wandb_helper.init_run()
 
-  wandb_helper.init_run()
-
-  wandb_helper.watch()
+    wandb_helper.watch()
 
   model_trainer.train()
 
 
+  if not parsed_args.disable_wandb:
+    wandb_helper.update_config(
+      config_update=model_trainer.get_wandb_config_update()
+    )
 
-  wandb_helper.update_config(
-    config_update=model_trainer.get_wandb_config_update()
-  )
 
 
-
-  wandb_helper.run.finish()
+    wandb_helper.run.finish()
 
 
 
