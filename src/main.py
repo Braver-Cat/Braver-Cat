@@ -26,6 +26,8 @@ from rich import print
 
 import json
 
+import numpy as np
+
 DEFAULT_NUM_INPUT_CHANNELS = 4
 DEFAULT_NUM_CLASSES = 6
 
@@ -178,9 +180,20 @@ def parse_cli_args():
     "--disable-wandb", action="store_true", 
     help="Whether to standardize data while training"
   )
+  arg_parser.add_argument(
+    "--resume-from-checkpoint-statistics", action="store_true", default=False,
+    help="Whether to use best {train,val} acc and losses from the loaded checkpoint"
+  )
   
 
   parsed_args = arg_parser.parse_args()
+
+  if parsed_args.checkpoint_to_load_path is not None and not parsed_args.resume_from_checkpoint_statistics:
+    print(
+      f"[bold {METHOD_COLOR}]main: [/bold {METHOD_COLOR}]" + 
+      f"[{WARNING_COLOR}]Selected to load a checkpoint without resuming " \
+      f"from its statistics![/{WARNING_COLOR}]"
+    )
 
   return parsed_args
 
@@ -324,7 +337,17 @@ def get_model_trainer(
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
     checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
-    starting_epoch, wandb_helper
+    starting_epoch, wandb_helper,
+    best_epoch_train_acc,
+    best_epoch_train_loss,
+    best_train_acc,
+    best_train_loss,
+    delta_train_loss,
+    best_val_acc,
+    best_val_loss,
+    delta_val_loss,
+    best_epoch_val_acc,
+    best_epoch_val_loss
   ):
 
   if model.cascade_type == "input":
@@ -349,7 +372,17 @@ def get_model_trainer(
       train_id=train_id,
       resumed_from_checkpoint=resumed_from_checkpoint,
       starting_epoch=starting_epoch,
-      wandb_helper=wandb_helper
+      wandb_helper=wandb_helper,
+      best_epoch_train_acc=best_epoch_train_acc,
+      best_epoch_train_loss=best_epoch_train_loss,
+      best_train_acc=best_train_acc,
+      best_train_loss=best_train_loss,
+      delta_train_loss=delta_train_loss,
+      best_val_acc=best_val_acc,
+      best_val_loss=best_val_loss,
+      delta_val_loss=delta_val_loss,
+      best_epoch_val_acc=best_epoch_val_acc,
+      best_epoch_val_loss=best_epoch_val_loss
     )
   
 def get_optimizer(
@@ -422,6 +455,48 @@ def populate_state_dicts(
 
   return model, optimizer, learning_rate_scheduler
 
+def populate_statistics_dict(checkpoint_from_disk, parsed_args):
+  
+  statistics_dict = {
+
+    "best_epoch_train_acc": -1,
+    "best_epoch_train_loss": -1,
+
+    "best_train_acc": 0,
+    "best_train_loss": np.inf,
+    "delta_train_loss": 0,
+    
+    "best_val_acc": 0,
+    "best_val_loss": np.inf,
+    "delta_val_loss": 0,
+
+    "best_epoch_val_acc": -1,
+    "best_epoch_val_loss": -1
+
+  }
+
+  if checkpoint_from_disk is not None and \
+    parsed_args.resume_from_checkpoint_statistics:
+    
+    statistics_dict = {
+
+      "best_epoch_train_acc": checkpoint_from_disk["best_epoch_train_acc"],
+      "best_epoch_train_loss": checkpoint_from_disk["best_epoch_train_loss"],
+
+      "best_train_acc": checkpoint_from_disk["best_train_acc"],
+      "best_train_loss": checkpoint_from_disk["best_train_loss"],
+      "delta_train_loss": checkpoint_from_disk["delta_train_loss"],
+      
+      "best_val_acc": checkpoint_from_disk["best_val_acc"],
+      "best_val_loss": checkpoint_from_disk["best_val_loss"],
+      "delta_val_loss": checkpoint_from_disk["delta_val_loss"],
+
+      "best_epoch_val_acc": checkpoint_from_disk["best_epoch_val_acc"],
+      "best_epoch_val_loss": checkpoint_from_disk["best_epoch_val_loss"]
+
+    }
+
+  return statistics_dict
 
 def main():
   parsed_args = parse_cli_args()
@@ -486,6 +561,10 @@ def main():
       parsed_args=parsed_args, other_args=other_args, model=model
     )
 
+  statistics_dict = populate_statistics_dict(
+    checkpoint_from_disk=checkpoint_from_disk, parsed_args=parsed_args
+  )
+
   model_trainer = get_model_trainer(
     device=device,
     model=model,
@@ -502,8 +581,19 @@ def main():
     train_id=other_args["train_id"],
     resumed_from_checkpoint=other_args["resumed_from_checkpoint"],
     starting_epoch=other_args["starting_epoch"],
-    wandb_helper=wandb_helper
+    wandb_helper=wandb_helper,
+    best_epoch_train_acc = statistics_dict["best_epoch_train_acc"], 
+    best_epoch_train_loss = statistics_dict["best_epoch_train_loss"],
+    best_train_acc = statistics_dict["best_train_acc"],
+    best_train_loss = statistics_dict["best_train_loss"],
+    delta_train_loss = statistics_dict["delta_train_loss"],
+    best_val_acc = statistics_dict["best_val_acc"],
+    best_val_loss = statistics_dict["best_val_loss"],
+    delta_val_loss = statistics_dict["delta_val_loss"],
+    best_epoch_val_acc = statistics_dict["best_epoch_val_acc"],
+    best_epoch_val_loss = statistics_dict["best_epoch_val_loss"]
   )
+
   if not parsed_args.disable_wandb:  
     wandb_helper.init_run()
 

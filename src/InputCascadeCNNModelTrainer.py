@@ -27,7 +27,11 @@ class InputCascadeCNNModelTrainer():
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
     checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
-    starting_epoch, wandb_helper
+    starting_epoch, wandb_helper, 
+    best_epoch_train_acc, best_epoch_train_loss,
+    best_train_acc, best_train_loss, delta_train_loss, 
+    best_val_acc, best_val_loss, delta_val_loss, 
+    best_epoch_val_acc, best_epoch_val_loss
   ):
     
     self.device = device
@@ -76,19 +80,19 @@ class InputCascadeCNNModelTrainer():
     self.pbar_val = None
     self.pbar_test = None
 
-    self.best_epoch_train_acc = -1
-    self.best_epoch_train_loss = -1
+    self.best_epoch_train_acc = best_epoch_train_acc
+    self.best_epoch_train_loss = best_epoch_train_loss
 
-    self.best_train_acc = 0
-    self.best_train_loss = np.inf
-    self.delta_train_loss = 0
+    self.best_train_acc = best_train_acc
+    self.best_train_loss = best_train_loss
+    self.delta_train_loss = delta_train_loss
     
-    self.best_val_acc = 0
-    self.best_val_loss = np.inf
-    self.delta_val_loss = 0
+    self.best_val_acc = best_val_acc
+    self.best_val_loss = best_val_loss
+    self.delta_val_loss = delta_val_loss
 
-    self.best_epoch_val_acc = -1
-    self.best_epoch_val_loss = -1
+    self.best_epoch_val_acc = best_epoch_val_acc
+    self.best_epoch_val_loss = best_epoch_val_loss
 
     self.running_train_acc = 0
     self.running_train_loss = np.inf
@@ -136,18 +140,18 @@ class InputCascadeCNNModelTrainer():
 
         "best_train_acc": self.best_train_acc,
         "best_train_loss": self.best_train_loss,
+        "delta_train_loss": self.delta_train_loss,
         
         "best_val_acc": self.best_val_acc,
         "best_val_loss": self.best_val_loss,
+        "delta_val_loss": self.delta_val_loss,
 
         "best_epoch_val_acc": self.best_epoch_val_acc,
         "best_epoch_val_loss": self.best_epoch_val_loss,
         
         "best_epoch_val_acc": self.best_epoch_val_acc,
         "best_epoch_val_loss": self.best_epoch_val_loss,
-        
-        "best_val_acc": self.best_val_acc,
-        "best_val_loss": self.best_val_loss,
+
       }, 
       f=export_full_path
     )
