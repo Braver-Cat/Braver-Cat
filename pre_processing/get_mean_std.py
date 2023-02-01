@@ -16,17 +16,8 @@ from rich import print
 
 import json
 
-
-DEFAULT_NUM_INPUT_CHANNELS = 4
-DEFAULT_NUM_CLASSES = 6
-
 WARNING_COLOR = "#DAA520"
 METHOD_COLOR = "#191970"
-
-GPU_NAME = "GeForce"
-
-WANDB_PROJECT_NAME = "Braver-Cat-End-to-End"
-WANDB_ENTITY_NAME = "Braver-Cat"
 
 def parse_cli_args():
   
@@ -133,21 +124,6 @@ def get_dataloaders(dataset_train, dataset_val, dataset_test, parsed_args):
 
   return dl_train, dl_val, dl_test
   
-def get_device():
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-  current_device = torch.cuda.current_device()
-  current_device_name = torch.cuda.get_device_name(current_device)
-  
-
-  if GPU_NAME not in current_device_name:
-    print(
-      f"[bold {METHOD_COLOR}] main: [{WARNING_COLOR}] [WARNING] Unable to use GPU as PyTorch device!"
-    )
-
-
-  return device
-
 def make_dir_if_absent(dir):
   if not os.path.exists(dir):
       os.makedirs(dir)
