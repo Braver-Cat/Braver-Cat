@@ -465,25 +465,27 @@ class InputCascadeCNNModelTrainer():
           prediction, label_global_scale
         )
 
-        self.pbar.update_table(
-          running_train_loss=self.running_train_loss,
-          running_val_loss=self.running_val_loss,
-          best_train_loss=self.best_train_loss,
-          best_val_loss=self.best_val_loss,
-          delta_train_loss=self.delta_train_loss,
-          delta_val_loss=self.delta_val_loss,
-          best_epoch_train_loss=self.best_epoch_train_loss,
-          best_epoch_val_loss=self.best_epoch_val_loss,
-          running_train_acc=self.running_train_acc,
-          running_val_acc=self.running_val_acc,
-          best_train_acc=self.best_train_acc,
-          best_val_acc=self.best_val_acc,
-          best_epoch_train_acc=self.best_epoch_train_acc,
-          best_epoch_val_acc=self.best_epoch_val_acc,
-          running_test_acc=self.running_test_acc
-        )
-
         self.pbar.update(task_id=self.pbar_test, advance=1)
+
+      self.running_test_acc /= self.batch_size * self.num_batches_test
+      
+      self.pbar.update_table(
+        running_train_loss=self.running_train_loss,
+        running_val_loss=self.running_val_loss,
+        best_train_loss=self.best_train_loss,
+        best_val_loss=self.best_val_loss,
+        delta_train_loss=self.delta_train_loss,
+        delta_val_loss=self.delta_val_loss,
+        best_epoch_train_loss=self.best_epoch_train_loss,
+        best_epoch_val_loss=self.best_epoch_val_loss,
+        running_train_acc=self.running_train_acc,
+        running_val_acc=self.running_val_acc,
+        best_train_acc=self.best_train_acc,
+        best_val_acc=self.best_val_acc,
+        best_epoch_train_acc=self.best_epoch_train_acc,
+        best_epoch_val_acc=self.best_epoch_val_acc,
+        running_test_acc=self.running_test_acc
+      )
 
     return 0
     
