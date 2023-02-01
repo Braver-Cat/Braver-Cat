@@ -371,8 +371,6 @@ def handle_transfer_learning(parsed_args, model: InputCascadeCNN):
 
   if TRANSFER_LEARNING_STRING in job_type:
 
-    print("before: ", model.get_num_trainable_parameters())
-
     if parsed_args[job_type]["local_scale_freeze_first_layers"]:
       model.local_scale_CNN.freeze_first_layers()
     
@@ -384,8 +382,6 @@ def handle_transfer_learning(parsed_args, model: InputCascadeCNN):
     
     if parsed_args[job_type]["global_scale_freeze_last_layer"]:
       model.global_scale_CNN.freeze_last_layer()
-
-    print("after: ", model.get_num_trainable_parameters())
 
   return model
 
