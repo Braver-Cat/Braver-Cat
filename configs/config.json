@@ -1,0 +1,55 @@
+{
+  
+  "local_scale_dataset_df_path": "../data/BRATS2013_patches_33_balanced/0", 
+  "global_scale_dataset_df_path": "../data/BRATS2013_patches_65_balanced/0", 
+  "local_scale_patch_size": 33, 
+  "global_scale_patch_size": 65, 
+
+  "load_data_in_memory": false,
+  
+  "batch_size": 64, 
+  
+  "cascade_type": "input",
+  
+  "elastic_net_delta_1": 0.0, 
+  "elastic_net_delta_2": 0.0, 
+  
+  "num_epochs": 3, 
+  
+  "job_type": "hyperparams_tuning_e2e",
+  "hyperparams_tuning_e2e": {},
+  "hyperparams_tuning_tl": {},
+  "train_e2e": {},
+  "train_tl": {},
+  
+  "checkpoint_path": "../checkpoints", 
+  "checkpoint_step": 1, 
+  "load_checkpoint": null,
+  "resume_from_checkpoint_statistics": true,
+  
+  "num_batches_train": 136, 
+  "num_batches_val": 40, 
+  "num_batches_test": 20, 
+  
+  "dropout": 0.0, 
+  "standardize": true,
+
+  "optimizer": "SGD",
+
+  
+  "learning_rate": 0.01, 
+  "learning_rate_scheduler_decay_step_size": 40, 
+  "learning_rate_scheduler_decay_factor": 0.95, 
+  
+  "momentum": 0.75, 
+  
+  "disable_wandb": false,
+
+  "num_input_channels": 4,
+  "num_classes": 6,
+
+
+
+
+  "test_key": null
+}
