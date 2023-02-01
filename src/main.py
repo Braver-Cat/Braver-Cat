@@ -288,18 +288,28 @@ def get_checkpoint_full_path(base_path, train_id):
   
   return checkpoint_full_path
 
-def load_checkpoint_from_disk(checkpoint_to_load_path):
+def load_checkpoint_from_disk(checkpoint_to_load_path, parsed_args):
   
   checkpoint_from_disk = None 
   resumed_from_checkpoint = None 
   checkpoint_epoch = 0
+
+  job_type = parsed_args["job_type"]
   
   if checkpoint_to_load_path is not None:
+    
     checkpoint_from_disk = torch.load(checkpoint_to_load_path)
 
     resumed_from_checkpoint = checkpoint_to_load_path
 
-    checkpoint_epoch = checkpoint_from_disk["checkpoint_epoch"]
+    if END_TO_END_LEARNING_STRING in job_type or \
+      (
+        TRANSFER_LEARNING_STRING in job_type and parsed_args[
+          job_type
+        ]["resume_optim_lr_scheduler_from_checkpoint"]
+      ):
+
+      checkpoint_epoch = checkpoint_from_disk["checkpoint_epoch"]
 
   return checkpoint_from_disk, resumed_from_checkpoint, checkpoint_epoch
 
@@ -307,6 +317,8 @@ def populate_state_dicts(
   checkpoint_from_disk, resumed_from_checkpoint, model, optimizer, 
   learning_rate_scheduler, parsed_args
 ):
+  
+  # look into config file for more information about the various if-else clauses
     
   if checkpoint_from_disk is not None:
 
@@ -314,9 +326,17 @@ def populate_state_dicts(
       f"[bold {METHOD_COLOR}] main: [/bold {METHOD_COLOR}]"
       f"[#00000] loading checkpoint {resumed_from_checkpoint}"
     )
+
     model.load_state_dict(state_dict=checkpoint_from_disk["model_state_dict"])
+
+    job_type = parsed_args["job_type"]
     
-    if END_TO_END_LEARNING_STRING in parsed_args["job_type"]:
+    if END_TO_END_LEARNING_STRING in job_type or \
+      (
+        TRANSFER_LEARNING_STRING in job_type and \
+        parsed_args[job_type]["resume_optim_lr_scheduler_from_checkpoint"]
+      ):
+    
       optimizer.load_state_dict(
         state_dict=checkpoint_from_disk["optimizer_state_dict"]
       )
@@ -415,7 +435,9 @@ def main():
     checkpoint_from_disk, 
     other_args["resumed_from_checkpoint"], 
     other_args["starting_epoch"]
-  ) = load_checkpoint_from_disk(parsed_args["checkpoint_to_load_path"])
+  ) = load_checkpoint_from_disk(
+    parsed_args["checkpoint_to_load_path"], parsed_args
+  )
 
   device = get_device()
 
