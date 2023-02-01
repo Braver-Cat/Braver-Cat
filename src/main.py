@@ -56,8 +56,6 @@ def parse_cli_args():
     
   parsed_args = json.load(f)
 
-  print(parsed_args)
-
   if parsed_args["checkpoint_to_load_path"] is not None and not parsed_args["resume_from_checkpoint_statistics"]:
     print(
       f"[bold {METHOD_COLOR}]main: [/bold {METHOD_COLOR}]" + 

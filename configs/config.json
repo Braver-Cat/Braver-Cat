@@ -1,9 +1,9 @@
 {
   
-  "local_scale_dataset_df_path": "../data/BRATS2013_patches_33_balanced/0", 
-  "global_scale_dataset_df_path": "../data/BRATS2013_patches_65_balanced/0", 
-  "local_scale_patch_size": 33, 
-  "global_scale_patch_size": 65, 
+  "dataset_local_scale_df_path": "../data/BRATS2013_patches_33_balanced/0", 
+  "dataset_global_scale_df_path": "../data/BRATS2013_patches_65_balanced/0", 
+  "patch_size_local_scale": "33", 
+  "patch_size_global_scale": "65", 
 
   "load_data_in_memory": false,
   
@@ -11,8 +11,8 @@
   
   "cascade_type": "input",
   
-  "elastic_net_delta_1": 0.0, 
-  "elastic_net_delta_2": 0.0, 
+  "delta_1": 0.0, 
+  "delta_2": 0.0, 
   
   "num_epochs": 3, 
   
@@ -22,9 +22,9 @@
   "train_e2e": {},
   "train_tl": {},
   
-  "checkpoint_path": "../checkpoints", 
+  "checkpoint_base_path": "../checkpoints", 
   "checkpoint_step": 1, 
-  "load_checkpoint": null,
+  "checkpoint_to_load_path": null,
   "resume_from_checkpoint_statistics": true,
   
   "num_batches_train": 136, 
@@ -34,12 +34,12 @@
   "dropout": 0.0, 
   "standardize": true,
 
-  "optimizer": "SGD",
+  "optimizer_name": "SGD",
 
   
   "learning_rate": 0.01, 
-  "learning_rate_scheduler_decay_step_size": 40, 
-  "learning_rate_scheduler_decay_factor": 0.95, 
+  "learning_rate_decay_step_size": 40, 
+  "learning_rate_decay_factor": 0.95, 
   
   "momentum": 0.75, 
   

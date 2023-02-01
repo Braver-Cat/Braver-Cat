@@ -27,10 +27,10 @@ class WandBHelper():
     self.run = wandb.init(
       project=self.project, entity=self.entity, 
       config=self._merge_dicts(
-        dict_1=vars(self.parsed_args), 
+        dict_1=self.parsed_args, 
         dict_2=self.other_args
       ),
-      job_type=self.parsed_args.job_type
+      job_type=self.parsed_args["job_type"]
     )
 
     self.init_has_been_called = True
