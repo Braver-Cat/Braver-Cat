@@ -196,20 +196,8 @@ def parse_cli_args():
     )
 
   return parsed_args
-
-def _get_dataset_of_scale(parsed_args, scale):
   
-  parsed_args = vars(parsed_args)
-
-  dataset_df_path_parsed_args_key = f"dataset_{scale}_scale_df_path"
-  dataset_train_path = f"{parsed_args[dataset_df_path_parsed_args_key]}/train_labels_df_one_hot.json"
-  dataset_val_path = f"{parsed_args[dataset_df_path_parsed_args_key]}/val_labels_df_one_hot.json"
-  dataset_test_path = f"{parsed_args[dataset_df_path_parsed_args_key]}/test_labels_df_one_hot.json"
-
-  patch_size_parsed_args_key = f"patch_size_{scale}_scale"
-
   
-
 def load_mean_std(mean_std_json_path):
   f = open(mean_std_json_path)
 
