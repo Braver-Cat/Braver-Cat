@@ -101,14 +101,14 @@ def get_datasets(parsed_args):
   global_scale_mean = torch.tensor(0)
   global_scale_std = torch.tensor(1)
 
-  if parsed_args['standardize']:
+  if parsed_args["standardize"]:
 
     local_scale_mean, local_scale_std = load_mean_std(
-      f"{parsed_args['dataset_local_scale_df_path']}/mean_std.json"
+      parsed_args["local_scale_mean_std_path"]
     )
     
     global_scale_mean, global_scale_std = load_mean_std(
-      f"{parsed_args['dataset_global_scale_df_path']}/mean_std.json"
+      parsed_args["global_scale_mean_std_path"]
     )
     
   dataset_train = BRATS2013DatasetLocalGlobalScalePatch(
