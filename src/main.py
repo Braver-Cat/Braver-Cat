@@ -41,6 +41,7 @@ wandb_project_name = "Braver-Cat"
 WANDB_ENTITY_NAME = "Braver-Cat"
 
 TRANSFER_LEARNING_STRING = "_tl"
+END_TO_END_LEARNING_STRING = "_e2e"
 
 def parse_cli_args():
   
@@ -58,7 +59,10 @@ def parse_cli_args():
   
   parsed_args  = json.loads(minified)
 
-  if parsed_args["checkpoint_to_load_path"] is not None and not parsed_args["resume_from_checkpoint_statistics"]:
+  if parsed_args["checkpoint_to_load_path"] is not None \
+    and not parsed_args["resume_from_checkpoint_statistics"] \
+    and END_TO_END_LEARNING_STRING in parsed_args["job_type"]:
+    
     print(
       f"[bold {METHOD_COLOR}]main: [/bold {METHOD_COLOR}]" + 
       f"[{WARNING_COLOR}]Selected to load a checkpoint without resuming " \
@@ -301,7 +305,7 @@ def load_checkpoint_from_disk(checkpoint_to_load_path):
 
 def populate_state_dicts(
   checkpoint_from_disk, resumed_from_checkpoint, model, optimizer, 
-  learning_rate_scheduler
+  learning_rate_scheduler, parsed_args
 ):
     
   if checkpoint_from_disk is not None:
@@ -312,13 +316,14 @@ def populate_state_dicts(
     )
     model.load_state_dict(state_dict=checkpoint_from_disk["model_state_dict"])
     
-    optimizer.load_state_dict(
-      state_dict=checkpoint_from_disk["optimizer_state_dict"]
-    )
+    if END_TO_END_LEARNING_STRING in parsed_args["job_type"]:
+      optimizer.load_state_dict(
+        state_dict=checkpoint_from_disk["optimizer_state_dict"]
+      )
 
-    learning_rate_scheduler.load_state_dict(
-      state_dict=checkpoint_from_disk["learning_rate_scheduler_state_dict"]
-    )
+      learning_rate_scheduler.load_state_dict(
+        state_dict=checkpoint_from_disk["learning_rate_scheduler_state_dict"]
+      )
 
   return model, optimizer, learning_rate_scheduler
 
@@ -386,6 +391,8 @@ def handle_transfer_learning(parsed_args, model: InputCascadeCNN):
   return model
 
 def main():
+  global wandb_project_name
+
   parsed_args = parse_cli_args()
   other_args = dict()
 
@@ -431,7 +438,7 @@ def main():
 
   model, optimizer, learning_rate_scheduler = populate_state_dicts(
     checkpoint_from_disk, other_args["resumed_from_checkpoint"], model, 
-    optimizer, learning_rate_scheduler
+    optimizer, learning_rate_scheduler, parsed_args
   )
 
   model = handle_transfer_learning(parsed_args=parsed_args, model=model)
@@ -446,7 +453,7 @@ def main():
     wandb_helper = None
   else:
 
-    wandb_project_name += "-Transfer-Learning" if "-Transfer-Learning" in parsed_args["job_type"] else "-End-to-End"
+    wandb_project_name += "-Transfer-Learning" if TRANSFER_LEARNING_STRING in parsed_args["job_type"] else "-End-to-End"
     
     wandb_helper = WandBHelper(
       project=wandb_project_name, entity=WANDB_ENTITY_NAME,
