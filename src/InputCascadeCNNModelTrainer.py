@@ -255,7 +255,6 @@ class InputCascadeCNNModelTrainer():
         self.optimizer.zero_grad()
 
         patch_local_scale = batch_train["local_scale"]["patch"].to(self.device)
-        label_local_scale = batch_train["local_scale"]["patch_label"].to(self.device)
         
         patch_global_scale = batch_train["global_scale"]["patch"].to(self.device)
         label_global_scale = batch_train["global_scale"]["patch_label"].to(self.device)
@@ -331,7 +330,6 @@ class InputCascadeCNNModelTrainer():
             break
 
           patch_local_scale = batch_val["local_scale"]["patch"].to(self.device)
-          label_local_scale = batch_val["local_scale"]["patch_label"].to(self.device)
           
           patch_global_scale = batch_val["global_scale"]["patch"].to(self.device)
           label_global_scale = batch_val["global_scale"]["patch_label"].to(self.device)
@@ -439,7 +437,6 @@ class InputCascadeCNNModelTrainer():
           break
 
         patch_local_scale = batch_test["local_scale"]["patch"].to(self.device)
-        label_local_scale = batch_test["local_scale"]["patch_label"].to(self.device)
         
         patch_global_scale = batch_test["global_scale"]["patch"].to(self.device)
         label_global_scale = batch_test["global_scale"]["patch_label"].to(self.device)
