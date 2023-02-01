@@ -25,6 +25,7 @@ import os
 from rich import print
 
 import json
+from jsmin import jsmin
 
 import numpy as np
 
@@ -50,11 +51,12 @@ def parse_cli_args():
 
   parsed_args = arg_parser.parse_args()
 
-  import json
+  with open(parsed_args.config_file) as js_file:
+    minified = jsmin(js_file.read())
   
-  f = open(parsed_args.config_file)
-    
-  parsed_args = json.load(f)
+  parsed_args  = json.loads(minified)
+
+  print(parsed_args)
 
   if parsed_args["checkpoint_to_load_path"] is not None and not parsed_args["resume_from_checkpoint_statistics"]:
     print(
