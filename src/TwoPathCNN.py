@@ -92,6 +92,7 @@ class TwoPathCNN(nn.Module):
 
     ### BEGIN concat path, conv_0 block
     
+    self.LAST_LAYER_NAME = "concat_conv_0"
     self.concat_conv_0 = nn.Conv2d(
       in_channels=224, out_channels=self.num_classes, kernel_size=21
     )
@@ -230,3 +231,25 @@ class TwoPathCNN(nn.Module):
     )
 
     return weights
+  
+  def get_num_trainable_parameters(self):
+    return sum(p.numel() for p in self.parameters() if p.requires_grad)
+  
+  def freeze_layer(self, layer):
+
+    for param in layer.parameters():
+      param.requires_grad = False
+  
+  def freeze_first_layers(self):
+    
+    for layer in [
+      self.local_conv_0_maxout_unit_0, self.local_conv_0_maxout_unit_1,
+      self.local_conv_1_maxout_unit_0, self.local_conv_1_maxout_unit_1,
+      self.global_conv_0_maxout_unit_0, self.global_conv_0_maxout_unit_1
+    ]:
+      
+      self.freeze_layer(layer=layer)
+
+  def freeze_last_layer(self):
+
+    self.freeze_layer(layer=self.concat_conv_0)

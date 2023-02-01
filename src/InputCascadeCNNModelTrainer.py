@@ -17,12 +17,15 @@ import time
 
 import numpy as np
 
+from InputCascadeCNN import InputCascadeCNN
+
 from CrossEntropyLossElasticNet import CrossEntropyLossElasticNet
 
 class InputCascadeCNNModelTrainer():
   
   def __init__(
-    self, device, model, num_epochs, optimizer, learning_rate_scheduler, 
+    self, device, model: InputCascadeCNN,
+    num_epochs, optimizer, learning_rate_scheduler, 
     batch_size, num_batches_train, num_batches_val, num_batches_test, 
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
@@ -227,7 +230,9 @@ class InputCascadeCNNModelTrainer():
       "running_train_loss" : self.running_train_loss,
       
       "running_val_acc" : self.running_val_acc,
-      "running_val_loss" : self.running_val_loss
+      "running_val_loss" : self.running_val_loss,
+
+      "num_trainable_parameters": self.model.get_num_trainable_parameters()
     }
 
   def _train(self):

@@ -1,23 +1,34 @@
 {
   "load_data_in_memory": false,
   
-  "num_epochs": 2, 
-  "num_batches_train": 30, 
-  "num_batches_val": 10, 
-  "num_batches_test": 5, 
+  "num_epochs": 8, 
+  "num_batches_train": 15, 
+  "num_batches_val": 5, 
+  "num_batches_test": 2, 
   
-  "job_type": "hyperparams_tuning_e2e",
+  // "job_type": "hyperparams_tuning_e2e",
+  "job_type": "hyperparams_tuning_tl",
+  // "job_type": "train_e2e",
+  // "job_type": "train_tl",
 
   "hyperparams_tuning_e2e": {},
   "hyperparams_tuning_tl": {
-    "layer_freeze_type": "only_local_scale"
+    "local_scale_freeze_first_layers": true,
+    "local_scale_freeze_last_layer": false,
+    "global_scale_freeze_first_layers": true,
+    "global_scale_freeze_last_layer": true
   },
   "train_e2e": {},
-  "train_tl": {},
+  "train_tl": {
+    "local_scale_freeze_first_layers": true,
+    "local_scale_freeze_last_layer": false,
+    "global_scale_freeze_first_layers": true,
+    "global_scale_freeze_last_layers": false
+  },
   
   "checkpoint_base_path": "../checkpoints", 
   "checkpoint_step": 1, 
-  "checkpoint_to_load_path": null,
+  "checkpoint_to_load_path": "../checkpoints/2023_02_01_11_32_48/checkpoint_epoch_1_best_val_loss.pth",
   "resume_from_checkpoint_statistics": true,
   
   "learning_rate": 0.01, 

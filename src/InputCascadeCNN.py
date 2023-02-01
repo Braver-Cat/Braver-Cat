@@ -42,3 +42,10 @@ class InputCascadeCNN(nn.Module):
         self.global_scale_CNN.get_model_weights(device=device)
       )
     )
+  
+  def get_num_trainable_parameters(self):
+    
+    return {
+      "local_scale_CNN": self.local_scale_CNN.get_num_trainable_parameters(), 
+      "global_scale_CNN": self.global_scale_CNN.get_num_trainable_parameters(), 
+    }

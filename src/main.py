@@ -40,6 +40,8 @@ GPU_NAME = "GeForce"
 WANDB_PROJECT_NAME = "Braver-Cat-End-to-End"
 WANDB_ENTITY_NAME = "Braver-Cat"
 
+TRANSFER_LEARNING_STRING = "_tl"
+
 def parse_cli_args():
   
   arg_parser = argparse.ArgumentParser()
@@ -62,6 +64,15 @@ def parse_cli_args():
       f"[{WARNING_COLOR}]Selected to load a checkpoint without resuming " \
       f"from its statistics![/{WARNING_COLOR}]"
     )
+
+  if TRANSFER_LEARNING_STRING in parsed_args["job_type"] and \
+    parsed_args["checkpoint_to_load_path"] is None:
+
+    raise AttributeError(
+      "Transfer Learning mode requires a checkpoint to be specified, "
+      "so as weights can be loaded from it"
+    )
+
 
   return parsed_args
   
@@ -354,6 +365,30 @@ def populate_statistics_dict(checkpoint_from_disk, parsed_args):
 
   return statistics_dict
 
+def handle_transfer_learning(parsed_args, model: InputCascadeCNN):
+
+  job_type = parsed_args["job_type"]
+
+  if TRANSFER_LEARNING_STRING in job_type:
+
+    print("before: ", model.get_num_trainable_parameters())
+
+    if parsed_args[job_type]["local_scale_freeze_first_layers"]:
+      model.local_scale_CNN.freeze_first_layers()
+    
+    if parsed_args[job_type]["local_scale_freeze_last_layer"]:
+      model.local_scale_CNN.freeze_last_layer()
+    
+    if parsed_args[job_type]["global_scale_freeze_first_layers"]:
+      model.global_scale_CNN.freeze_first_layers()
+    
+    if parsed_args[job_type]["global_scale_freeze_last_layer"]:
+      model.global_scale_CNN.freeze_last_layer()
+
+    print("after: ", model.get_num_trainable_parameters())
+
+  return model
+
 def main():
   parsed_args = parse_cli_args()
   other_args = dict()
@@ -402,6 +437,8 @@ def main():
     checkpoint_from_disk, other_args["resumed_from_checkpoint"], model, 
     optimizer, learning_rate_scheduler
   )
+
+  model = handle_transfer_learning(parsed_args=parsed_args, model=model)
 
   other_args["train_id"] = get_train_id()
   
