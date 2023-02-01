@@ -37,7 +37,7 @@ METHOD_COLOR = "#191970"
 
 GPU_NAME = "GeForce"
 
-WANDB_PROJECT_NAME = "Braver-Cat-End-to-End"
+wandb_project_name = "Braver-Cat"
 WANDB_ENTITY_NAME = "Braver-Cat"
 
 TRANSFER_LEARNING_STRING = "_tl"
@@ -445,8 +445,11 @@ def main():
   if parsed_args["disable_wandb"]:
     wandb_helper = None
   else:
+
+    wandb_project_name += "-Transfer-Learning" if "-Transfer-Learning" in parsed_args["job_type"] else "-End-to-End"
+    
     wandb_helper = WandBHelper(
-      project=WANDB_PROJECT_NAME, entity=WANDB_ENTITY_NAME,
+      project=wandb_project_name, entity=WANDB_ENTITY_NAME,
       parsed_args=parsed_args, other_args=other_args, model=model
     )
 
