@@ -100,6 +100,8 @@ class InputCascadeCNNModelTrainer():
     self.running_val_acc = 0
     self.running_val_loss = np.inf
 
+    self.running_test_acc = 0
+
 
   def _set_pbars(self):
     self.pbar_epochs = self.pbar.add_task(
@@ -441,6 +443,7 @@ class InputCascadeCNNModelTrainer():
         
         patch_global_scale = batch_test["global_scale"]["patch"].to(self.device)
         label_global_scale = batch_test["global_scale"]["patch_label"].to(self.device)
+        label_global_scale = label_global_scale.squeeze(1)
 
         local_scale_mean = batch_test["local_scale"]["mean"].to(self.device)
         local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
@@ -458,6 +461,29 @@ class InputCascadeCNNModelTrainer():
         prediction = self.model(
           x_local_scale=patch_local_scale, 
           x_global_scale=patch_global_scale
+        )
+        prediction = prediction.squeeze(-1).squeeze(-1)
+
+        self.running_test_acc += self.get_num_correct_preds(
+          prediction, label_global_scale
+        )
+
+        self.pbar.update_table(
+          running_train_loss=self.running_train_loss,
+          running_val_loss=self.running_val_loss,
+          best_train_loss=self.best_train_loss,
+          best_val_loss=self.best_val_loss,
+          delta_train_loss=self.delta_train_loss,
+          delta_val_loss=self.delta_val_loss,
+          best_epoch_train_loss=self.best_epoch_train_loss,
+          best_epoch_val_loss=self.best_epoch_val_loss,
+          running_train_acc=self.running_train_acc,
+          running_val_acc=self.running_val_acc,
+          best_train_acc=self.best_train_acc,
+          best_val_acc=self.best_val_acc,
+          best_epoch_train_acc=self.best_epoch_train_acc,
+          best_epoch_val_acc=self.best_epoch_val_acc,
+          running_test_acc=self.running_test_acc
         )
 
         self.pbar.update(task_id=self.pbar_test, advance=1)
@@ -484,7 +510,8 @@ class InputCascadeCNNModelTrainer():
       TextColumn("•"),
       TimeRemainingColumn(),
       train_color = PBAR_TRAIN_COLOR, 
-      val_color = PBAR_VAL_COLOR
+      val_color = PBAR_VAL_COLOR, 
+      test_color=PBAR_TEST_COLOR
       
     ) as progress:
         

@@ -8,6 +8,7 @@ class CustomProgress(Progress):
 
         self.val_color = kwargs["val_color"] if "val_color" in kwargs else "#ff0000"
         self.train_color = kwargs["train_color"] if "train_color" in kwargs else "#ff0000"
+        self.test_color = kwargs["test_color"] if "test_color" in kwargs else "#ff0000"
 
 
     def get_renderables(self):
@@ -33,7 +34,8 @@ class CustomProgress(Progress):
         best_train_acc,
         best_val_acc,
         best_epoch_train_acc,
-        best_epoch_val_acc
+        best_epoch_val_acc,
+        running_test_acc=None
     ):
         self.table = Table()
         self.table.add_column("Stage")
@@ -59,4 +61,14 @@ class CustomProgress(Progress):
             f"{delta_val_loss:.3f}",
             f"{running_val_acc:.2f}", 
             f"{best_val_acc:.2f} [{self.val_color} bold]({best_epoch_val_acc})"
+        )
+
+        if running_test_acc is not None:
+            self.table.add_row(
+            f"[{self.test_color} bold] Test", 
+            f" ♠♣ ",
+            f" ♠♣ ",
+            f" ♠♣ ",
+            f"{running_test_acc:.2f}", 
+            f"{running_test_acc:.2f} [{self.test_color} bold]({69})"
         )
