@@ -53,25 +53,16 @@ df_row_task = pbar.add_task(
   description="DF rows progress...", total=len(df.index)
 )
 
-patch_size_task = pbar.add_task(
-  description="Patch sizes...", total=len(PATCH_SIZES)
-)
-
-channel_task = pbar.add_task(description="Channel progress...", total=4)
+new_df_list = []
 
 for df_index, df_row in df.iterrows():
 
-  new_df_list = []
   new_df_row = {}
-
-  pbar.reset(patch_size_task)
 
   for patch_size in PATCH_SIZES:
     img_np = np.load(f"{df_row['img_path']}/img.npy")
 
     patch_np = np.empty((img_np.shape[0], patch_size, patch_size))
-
-    pbar.reset(channel_task)
 
     for channel in range(img_np.shape[0]):
       
@@ -88,8 +79,6 @@ for df_index, df_row in df.iterrows():
 
       patch_np[channel, ...] = patch
 
-      pbar.update(channel_task, advance=1)
-
     patch_export_name = df_row['img_path'].split("/")[-1].split(".")[0]
     
     patch_export_dir = f"../data/{DATASET_NAME}_patches_{patch_size}_{IS_BALANCED}/{SPLIT_ID}/{SPLIT_NAME}"
@@ -100,8 +89,6 @@ for df_index, df_row in df.iterrows():
     np.save(patch_export_path, patch_np)
 
     new_df_row[f"patch_{patch_size}_x_{patch_size}_img_path"] = patch_export_path
-
-    pbar.update(patch_size_task, advance=1)
 
   pbar.update(df_row_task, advance=1)
   
