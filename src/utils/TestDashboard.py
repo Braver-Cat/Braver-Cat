@@ -1,5 +1,5 @@
 
-from Dashboard import Dashboard
+from utils.Dashboard import Dashboard
 import torch
 
 import time

@@ -5,7 +5,7 @@ import numpy as np
 
 import json
 
-from BRATS2013Dataset import BRATS2013Dataset
+from dataset.BRATS2013Dataset import BRATS2013Dataset
 
 
 class BRATS2013DatasetPatchMetadata(BRATS2013Dataset):

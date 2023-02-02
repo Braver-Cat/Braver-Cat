@@ -3,20 +3,20 @@ import argparse
 from parso import parse
 
 # from BRATS2013DatasetPatch import BRATS2013DatasetPatch
-from BRATS2013DatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
+from dataset.BRATS2013DatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
 
 from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 
-from TwoPathCNN import TwoPathCNN
-from InputCascadeCNN import InputCascadeCNN
+from model.TwoPathCNN import TwoPathCNN
+from model.InputCascadeCNN import InputCascadeCNN
 
-from InputCascadeCNNModelTrainer import InputCascadeCNNModelTrainer
+from model.InputCascadeCNNModelTrainer import InputCascadeCNNModelTrainer
 
 import torch.optim 
 
-from WandBHelper import WandBHelper
+from utils.WandBHelper import WandBHelper
 
 from datetime import datetime
 

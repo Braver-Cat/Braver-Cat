@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from TwoPathCNN import TwoPathCNN
+from model.TwoPathCNN import TwoPathCNN
 
 class InputCascadeCNN(nn.Module):
   def __init__(self, num_input_channels, num_classes, dropout):

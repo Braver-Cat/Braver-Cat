@@ -6,7 +6,7 @@ from rich import print
 
 from rich.live import Live
 from rich.table import Table
-from CustomProgress import CustomProgress
+from utils.CustomProgress import CustomProgress
 
 PBAR_EPOCHS_COLOR = "#830a48"
 PBAR_TRAIN_COLOR = "#2a9d8f"
@@ -17,9 +17,9 @@ import time
 
 import numpy as np
 
-from InputCascadeCNN import InputCascadeCNN
+from model.InputCascadeCNN import InputCascadeCNN
 
-from CrossEntropyLossElasticNet import CrossEntropyLossElasticNet
+from model.CrossEntropyLossElasticNet import CrossEntropyLossElasticNet
 
 class InputCascadeCNNModelTrainer():
   

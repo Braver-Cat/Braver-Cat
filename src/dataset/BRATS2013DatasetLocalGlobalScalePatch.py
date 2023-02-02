@@ -9,7 +9,7 @@ import numpy as np
 
 from tqdm import tqdm
 
-from BRATS2013DatasetPatch import BRATS2013DatasetPatch
+from dataset.BRATS2013DatasetPatch import BRATS2013DatasetPatch
 
 class BRATS2013DatasetLocalGlobalScalePatch(Dataset):
 
