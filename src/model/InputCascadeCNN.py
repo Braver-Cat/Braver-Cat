@@ -49,3 +49,44 @@ class InputCascadeCNN(nn.Module):
       "local_scale_CNN": self.local_scale_CNN.get_num_trainable_parameters(), 
       "global_scale_CNN": self.global_scale_CNN.get_num_trainable_parameters(), 
     }
+  
+  def switch_local_global_scale_layers(self, layers_to_switch):
+    old_local_state_dict = self.local_scale_CNN.state_dict()
+    old_global_state_dict = self.global_scale_CNN.state_dict()
+
+    for local_layer_name, global_layer_name in zip(
+      old_local_state_dict.keys(), old_global_state_dict.keys()
+    ):
+      
+      if local_layer_name.split(".")[0] in layers_to_switch:
+        
+        temp = old_local_state_dict[local_layer_name]
+        old_local_state_dict[local_layer_name] = old_global_state_dict[
+          local_layer_name
+        ]
+        old_global_state_dict[local_layer_name] = temp
+    
+    self.local_scale_CNN.load_state_dict(old_local_state_dict)
+    self.global_scale_CNN.load_state_dict(old_global_state_dict)
+  
+  def copy_local_layers_to_global(self):
+    
+    old_local_state_dict = self.local_scale_CNN.state_dict()
+    old_global_state_dict = self.global_scale_CNN.state_dict()
+
+    for local_layer_name, global_layer_name in zip(
+      old_local_state_dict.keys(), old_global_state_dict.keys()
+    ):
+      
+      if local_layer_name.split(".")[0] in [
+        "local_conv_1_maxout_unit_0", "local_conv_1_maxout_unit_1",
+        "concat_conv_0"
+      ]:
+        temp = old_local_state_dict[local_layer_name]
+        old_local_state_dict[local_layer_name] = old_global_state_dict[
+          local_layer_name
+        ]
+        old_global_state_dict[local_layer_name] = temp
+    
+    self.local_scale_CNN.load_state_dict(old_local_state_dict)
+    self.global_scale_CNN.load_state_dict(old_global_state_dict)
