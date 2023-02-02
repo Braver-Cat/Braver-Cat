@@ -51,42 +51,60 @@ class InputCascadeCNN(nn.Module):
     }
   
   def switch_local_global_scale_layers(self, layers_to_switch):
-    old_local_state_dict = self.local_scale_CNN.state_dict()
-    old_global_state_dict = self.global_scale_CNN.state_dict()
+    local_state_dict = self.local_scale_CNN.state_dict()
+    global_state_dict = self.global_scale_CNN.state_dict()
 
     for local_layer_name, global_layer_name in zip(
-      old_local_state_dict.keys(), old_global_state_dict.keys()
+      local_state_dict.keys(), global_state_dict.keys()
     ):
       
       if local_layer_name.split(".")[0] in layers_to_switch:
         
-        temp = old_local_state_dict[local_layer_name]
-        old_local_state_dict[local_layer_name] = old_global_state_dict[
+        temp = local_state_dict[local_layer_name]
+        local_state_dict[local_layer_name] = global_state_dict[
           local_layer_name
         ]
-        old_global_state_dict[local_layer_name] = temp
+        global_state_dict[local_layer_name] = temp
     
-    self.local_scale_CNN.load_state_dict(old_local_state_dict)
-    self.global_scale_CNN.load_state_dict(old_global_state_dict)
+    self.local_scale_CNN.load_state_dict(local_state_dict)
+    self.global_scale_CNN.load_state_dict(global_state_dict)
   
-  def copy_local_layers_to_global(self):
-    
-    old_local_state_dict = self.local_scale_CNN.state_dict()
-    old_global_state_dict = self.global_scale_CNN.state_dict()
+  def turn_off_layers(layers_to_turn_off, model):
+    for module_name, module in model.named_modules():
+
+      if module_name in layers_to_turn_off:
+
+        for parameter_name, parameter in module.named_parameters():
+
+          if "bias" in parameter_name:
+            parameter = torch.zeros_like(parameter)
+          
+          if "weight" in parameter_name:
+            torch.nn.init.dirac_(parameter)
+
+
+  def copy_layers(self, layers_to_copy, copy_mode):
+    local_state_dict = self.local_scale_CNN.state_dict()
+    global_state_dict = self.global_scale_CNN.state_dict()
 
     for local_layer_name, global_layer_name in zip(
-      old_local_state_dict.keys(), old_global_state_dict.keys()
+      local_state_dict.keys(), global_state_dict.keys()
     ):
       
-      if local_layer_name.split(".")[0] in [
-        "local_conv_1_maxout_unit_0", "local_conv_1_maxout_unit_1",
-        "concat_conv_0"
-      ]:
-        temp = old_local_state_dict[local_layer_name]
-        old_local_state_dict[local_layer_name] = old_global_state_dict[
-          local_layer_name
-        ]
-        old_global_state_dict[local_layer_name] = temp
+      if local_layer_name.split(".")[0] in layers_to_copy:
+        
+        if copy_mode == "local_to_global":
+          global_state_dict[local_layer_name] = local_state_dict[
+            local_layer_name
+          ]
+        elif copy_mode == "global_to_local":
+          local_state_dict[local_layer_name] = global_state_dict[
+            local_layer_name
+          ]
+        else:
+          raise ValueError(
+            f"{copy_mode} copy mode does not exist. Supported values: local_to_global, global_to_local"
+          )
     
-    self.local_scale_CNN.load_state_dict(old_local_state_dict)
-    self.global_scale_CNN.load_state_dict(old_global_state_dict)
+    self.local_scale_CNN.load_state_dict(local_state_dict)
+    self.global_scale_CNN.load_state_dict(global_state_dict)

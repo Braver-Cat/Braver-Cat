@@ -433,6 +433,8 @@ class InputCascadeCNNModelTrainer():
   
   def _test(self):
 
+    # TODO parametrize this.
+
     # layers_to_switch = [
     #   "local_conv_1_maxout_unit_0", 
     #   "local_conv_1_maxout_unit_1",
@@ -441,29 +443,31 @@ class InputCascadeCNNModelTrainer():
     
     # self.model.switch_local_global_scale_layers(layers_to_switch)
 
-    layers_to_prune = [
-      "local_conv_0_maxout_unit_0", 
-      "local_conv_0_maxout_unit_1",
+    # layers_to_turn_off = [
+    #   # "local_conv_0_maxout_unit_0", 
+    #   # "local_conv_0_maxout_unit_1",
 
-      "local_conv_1_maxout_unit_0", 
-      "local_conv_1_maxout_unit_1" , 
+    #   # "local_conv_1_maxout_unit_0", 
+    #   # "local_conv_1_maxout_unit_1" , 
       
-      "global_conv_0_maxout_unit_0", 
-      "global_conv_0_maxout_unit_1", 
-      # "concat_conv_0"
-    ]
+    #   # "global_conv_0_maxout_unit_0", 
+    #   # "global_conv_0_maxout_unit_1", 
+    #   # "concat_conv_0"
+    # ]
 
-    for module_name, module in self.model.local_scale_CNN.named_modules():
+    # self.model.turn_off_layers(
+    #   layers_to_turn_off=layers_to_turn_off, model=self.model.local_scale_CNN
+    # )
 
-      if module_name in layers_to_prune:
-
-        for parameter_name, parameter in module.named_parameters():
-
-          if "bias" in parameter_name:
-            parameter = torch.zeros_like(parameter)
-          
-          if "weight" in parameter_name:
-            torch.nn.init.dirac_(parameter)
+    # layers_to_copy = [
+    #   "local_conv_1_maxout_unit_0", 
+    #   "local_conv_1_maxout_unit_1",
+    #   "concat_conv_0"
+    # ]
+    # # copy_mode = "local_to_global"
+    # copy_mode = "global_to_local"
+    
+    # self.model.copy_layers(layers_to_copy, copy_mode)
 
     with torch.no_grad():
 
