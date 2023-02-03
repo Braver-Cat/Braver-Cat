@@ -9,10 +9,12 @@ import asciichartpy as acp
 import numpy as np
 import keyboard
 
-PBAR_EPOCHS_COLOR = "#830a48"
-PBAR_TRAIN_COLOR = "#2a9d8f"
-PBAR_VAL_COLOR = "#065a82"
-PBAR_TEST_COLOR = "#00008B"
+EPOCHS_COLOR = "#830a48"
+TRAIN_COLOR = "#2a9d8f"
+VAL_COLOR = "#065a82"
+TEST_COLOR = "#00008B"
+PARAMS_COLOR = "#FED766"
+PBAR_COLOR = "#9593D9"
 
 class Dashboard():
   def __init__(self, params: dict, key_closer = False):
@@ -24,11 +26,23 @@ class Dashboard():
 
     self.train_losses = []
     self.val_losses = []
+    self.train_accs = []
+    self.val_accs = []
 
     self.live = None
     self.stopped = False
     self.key_closer = key_closer
     self.layout = Layout()
+    self.current_dict = {
+      "train": {
+        "loss": np.inf,
+        "accuracy": 0
+      },
+      "val": {
+        "loss": np.inf,
+        "accuracy": 0
+      }
+    }
     self.best_dict = {
       "train": {
         "loss": (np.inf, 0, -1),
@@ -58,20 +72,27 @@ class Dashboard():
     self.val_bar = self.progress.add_task("[green]Validation", total=self.params["val_batches"])
     self.test_bar = self.progress.add_task("[cyan]Test", total=self.params["test_batches"])
 
-    self.build_layout()
-    self.build_params()
-    self.build_progress_bars()
-    self.build_bests()
-    self.init_out_panel()
+    self._init_panels()
+
     if self.key_closer:
       self.init_keyboard()
   
   def println(self, out):
     self.to_print.append(str(out))
-    self.layout["output"].update(Panel(Output_renderable(self.to_print)))
+    self.layout["output"].update(Panel(Output_renderable(self.to_print), title="Logs"))
   
-  def init_out_panel(self):
-    self.layout["output"].update(Panel(""))
+  def _init_panels(self):
+    self.build_layout()
+    self.build_progress_bars()
+    self.build_params()
+    self.layout["output"].update(Panel("", title="Logs"))
+    self._build_stats()
+    self.layout["train_loss"].update(Panel("", title="Training loss", style=TRAIN_COLOR))
+    self.layout["val_loss"].update(Panel("", title="Validation loss", style=VAL_COLOR))
+    self.layout["train_acc"].update(Panel("", title="Training accuracy", style=TRAIN_COLOR))
+    self.layout["val_acc"].update(Panel("", title="Validation accuracy", style=VAL_COLOR))
+    self.layout["test_stats"].update(Panel("", title="Test stats"))
+    
 
   def build_layout(self):
     self.layout.split(
@@ -79,29 +100,32 @@ class Dashboard():
       Layout(name="progress_bars", size=6),
     )
     self.layout["main"].split(
-      Layout(name="side", size=50),
-      Layout(name="body", ratio=4),
+      Layout(name="params", size=25),
+      Layout(name="train_panel", ratio=1),
+      Layout(name="val_panel", ratio=1),
+      Layout(name="test_out_panel", ratio=1),
       splitter="row"
     )
-    self.layout["side"].split(
-      Layout(name="params"),
-      Layout(name="bests")
+    self.layout["test_out_panel"].split(
+      Layout(name="output"),
+      Layout(name="test_stats", size=10)
     )
-    self.layout["body"].split(
-      Layout(name="graphes"),
-      Layout(name="output", size=30),
-      splitter="row"
+    self.layout["train_panel"].split(
+      Layout(name="train_stats", size=10),
+      Layout(name="train_graphes")
     )
-    self.layout["graphes"].split(
-      Layout(name="col1"),
-      Layout(name="col2"),
-      splitter="row"
-    )
-    self.layout["col1"].split(
+    self.layout["train_graphes"].split(
       Layout(name="train_loss"),
-      Layout(name="val_loss")
+      Layout(name="train_acc")
     )
-    
+    self.layout["val_panel"].split(
+      Layout(name="val_stats", size=10),
+      Layout(name="val_graphes")
+    )
+    self.layout["val_graphes"].split(
+      Layout(name="val_loss"),
+      Layout(name="val_acc")
+    )
   
   def init_keyboard(self):
     keyboard.add_hotkey("space", lambda: self.stop() if not self.stopped else self.start())
@@ -113,7 +137,7 @@ class Dashboard():
   ## Bar plotting stuff
 
   def build_progress_bars(self):
-    self.layout["progress_bars"].update(Panel(self.progress, title="Progress bars"))
+    self.layout["progress_bars"].update(Panel(self.progress, title="Progress bars", style=PBAR_COLOR))
   
   def epoch_step(self, train_loss, val_loss, train_acc, val_acc):
     self.current_epoch += 1
@@ -121,14 +145,17 @@ class Dashboard():
     if self.current_epoch != self.params["n_epochs"]:
       self.progress.reset(self.train_bar)
       self.progress.reset(self.val_bar)
-    out_str = f"Current train loss: {train_loss:.3f}\n"
-    out_str += f"Current val loss: {val_loss:.3f}\n"
-    out_str += f"Current train acc: {train_acc:.2f}\n"
-    out_str += f"Current val acc: {val_acc:.2f}\n"
-    out_str += self.build_bests(train_loss, val_loss, train_acc, val_acc)
-    self.layout["bests"].update(Panel(out_str, title="Parameters", padding=(1)))
 
+    self.current_dict["train"] = {"loss": train_loss, "accuracy": train_acc}
+    self.current_dict["val"] = {"loss": val_loss, "accuracy": val_acc}
 
+    self._update_bests(train_loss, val_loss, train_acc, val_acc)
+    self._build_stats()
+
+    self._plot_train_loss()
+    self._plot_val_loss()
+    self._plot_train_accs()
+    self._plot_val_accs()
   
   def train_step(self):
     epoch_advance = 1 / (self.params["train_batches"] + self.params["val_batches"])
@@ -142,16 +169,36 @@ class Dashboard():
 
   def test_step(self):
     self.progress.advance(self.test_bar)
+  
+  def init_bests(self, starting_epoch, 
+      best_epoch_train_acc, best_epoch_train_loss,
+      best_train_acc, best_train_loss, delta_train_loss, 
+      best_val_acc, best_val_loss, delta_val_loss, 
+      best_epoch_val_acc, best_epoch_val_loss
+    ):
+    
+    self.progress.update(self.epochs_bar, completed=starting_epoch)
+    self.current_epoch = starting_epoch
+    train_dict = self.best_dict["train"]
+    train_dict["loss"] = (best_train_loss, delta_train_loss, best_epoch_train_loss)
+    train_dict["accuracy"] = (best_train_acc, 0, best_epoch_train_acc)
+
+    val_dict = self.best_dict["val"]
+    val_dict["loss"] = (best_val_loss, delta_val_loss, best_epoch_val_loss)
+    val_dict["accuracy"] = (best_val_acc, 0, best_epoch_val_acc)
+
+
+
 
   ## Show parameter
 
   def build_params(self):
     formatted = "\n".join([f"{key}: {value}" for key, value in self.params.items()])
-    self.layout["params"].update(Panel(formatted, title="Parameters", padding=(1)))
+    self.layout["params"].update(Panel(formatted, title="Parameters", padding=(1), style=PARAMS_COLOR))
 
   ## Show and update best scores
   
-  def build_bests(self, train_loss=None, val_loss=None, train_acc=None, val_acc=None):
+  def _update_bests(self, train_loss=None, val_loss=None, train_acc=None, val_acc=None):
     if train_loss != None and train_loss < self.best_dict["train"]["loss"][0]:
       delta = self.best_dict["train"]["loss"][0] - train_loss 
       self.best_dict["train"]["loss"] = (train_loss, delta, self.current_epoch)
@@ -164,28 +211,45 @@ class Dashboard():
     if val_acc != None and val_acc > self.best_dict["val"]["accuracy"][0]:
       delta = self.best_dict["val"]["accuracy"][0] - val_acc 
       self.best_dict["val"]["accuracy"] = (val_acc, delta, self.current_epoch)
-    
-    train_loss_lst = self.best_dict["train"]["loss"]
-    val_loss_lst = self.best_dict["val"]["loss"]
-    train_acc_lst = self.best_dict["train"]["accuracy"]
-    val_acc_lst = self.best_dict["val"]["accuracy"]
-    best_str = ""
-    best_str += f"Best train loss: {train_loss_lst[0]:.3f} {train_loss_lst[1]:.3f} ({train_loss_lst[2]})\n"
-    best_str += f"Best validation loss: {val_loss_lst[0]:.3f} {val_loss_lst[1]:.3f} ({val_loss_lst[2]})\n"
-    best_str += f"Best train acc: {train_acc_lst[0]:.2f} {train_acc_lst[1]:.2f} ({train_acc_lst[2]})\n"
-    best_str += f"Best validation acc: {val_acc_lst[0]:.2f} {val_acc_lst[1]:.2f} ({val_acc_lst[2]})\n"
+  
+  def _build_stats(self):
+    train_stats = f"[white]Current Loss: {self.current_dict['train']['loss']:.3f}\n"
+    train_stats += f"Best Loss: {self.best_dict['train']['loss'][0]:.3f} (epoch {self.best_dict['train']['loss'][2]})\n"
+    train_stats += f"Delta Loss: {self.best_dict['train']['loss'][1]:.3f}\n\n"
 
-    return best_str
+    train_stats += f"Current Accuracy: {self.current_dict['train']['accuracy']:.2f}\n"
+    train_stats += f"Best Accuracy: {self.best_dict['train']['accuracy'][0]:.2f} (epoch {self.best_dict['train']['accuracy'][2]})\n"
+    train_stats += f"Delta Accuracy: {self.best_dict['train']['accuracy'][1]:.2f}[/white]"
+
+    self.layout["train_stats"].update(Panel(train_stats, title="Training stats", style=TRAIN_COLOR))
+
+    val_stats = f"[white]Current Loss: {self.current_dict['val']['loss']:.3f}\n"
+    val_stats += f"Best Loss: {self.best_dict['val']['loss'][0]:.3f} (epoch {self.best_dict['val']['loss'][2]})\n"
+    val_stats += f"Delta Loss: {self.best_dict['val']['loss'][1]:.3f}\n\n"
+
+    val_stats += f"Current Accuracy: {self.current_dict['val']['accuracy']:.2f}\n"
+    val_stats += f"Best Accuracy: {self.best_dict['val']['accuracy'][0]:.2f} (epoch {self.best_dict['val']['accuracy'][2]})\n"
+    val_stats += f"Delta Accuracy: {self.best_dict['val']['accuracy'][1]:.2f}[/white]"
+
+    self.layout["val_stats"].update(Panel(val_stats, title="Validation stats", style=VAL_COLOR))
 
   # Plotting graph
 
-  def plot_train_loss(self, loss):
-    self.train_losses.append(loss)
-    self.layout["train_loss"].update(Panel(Graph_renderable(self.train_losses)))
+  def _plot_train_loss(self):
+    self.train_losses.append(self.current_dict["train"]["loss"])
+    self.layout["train_loss"].update(Panel(Graph_renderable(self.train_losses), title="Training loss", style=TRAIN_COLOR))
 
-  def plot_val_loss(self, loss):
-    self.val_losses.append(loss)
-    self.layout["val_loss"].update(Panel(Graph_renderable(self.val_losses)))
+  def _plot_val_loss(self):
+    self.val_losses.append(self.current_dict["val"]["loss"])
+    self.layout["val_loss"].update(Panel(Graph_renderable(self.val_losses), title="Validation loss", style=VAL_COLOR))
+  
+  def _plot_val_accs(self):
+    self.val_accs.append(self.current_dict["val"]["accuracy"])
+    self.layout["val_acc"].update(Panel(Graph_renderable(self.val_accs), title="Validation accuracy", style=VAL_COLOR))
+  
+  def _plot_train_accs(self):
+    self.train_accs.append(self.current_dict["train"]["accuracy"])
+    self.layout["train_acc"].update(Panel(Graph_renderable(self.train_accs), title="Training accuracy", style=TRAIN_COLOR))
   
   
   def start(self):
