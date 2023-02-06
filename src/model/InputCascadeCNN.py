@@ -69,7 +69,7 @@ class InputCascadeCNN(nn.Module):
     self.local_scale_CNN.load_state_dict(local_state_dict)
     self.global_scale_CNN.load_state_dict(global_state_dict)
   
-  def turn_off_layers(layers_to_turn_off, model):
+  def turn_off_layers(self, layers_to_turn_off, model):
     for module_name, module in model.named_modules():
 
       if module_name in layers_to_turn_off:
