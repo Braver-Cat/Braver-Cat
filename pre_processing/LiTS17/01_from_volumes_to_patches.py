@@ -98,32 +98,16 @@ for pat_id, (vol_file, seg_file) in enumerate(zip(volume_files, segmentation_fil
       
       if (not np.any(vol_patches[patch_id, ...])):
         continue
+
+      label = seg_patches[patch_id, PATCH_SIZE//2, PATCH_SIZE//2]
       
       patch_path = f"{PATCHES_DATASET_BASE_PATH}" \
-        f"/{str(pat_id).zfill(3)}_{str(patch_id).zfill(6)}.npy"
+        f"/{str(pat_id).zfill(3)}_{str(patch_id).zfill(6)}_label_{label}.npy"
       
       np.save(patch_path, vol_patches[patch_id, ...])
-      
-      label = seg_patches[patch_id, PATCH_SIZE//2, PATCH_SIZE//2]
-      label_set.add(label)
-      
-      label_one_hot = np.eye(3)[label].astype(int)
-      
-      df_rows.append(
-        {
-          f"patch_{PATCH_SIZE}_x_{PATCH_SIZE}_img_path": patch_path,
-          "patch_label_one_hot": label_one_hot
-        }
-      )
 
       pbar.advance(patch_task)
 
     pbar.advance(slice_task)
 
   pbar.advance(patient_task)
-
-df = pd.DataFrame(df_rows)
-
-print(f"Exporting patch DF in {PATCHES_DF_PATH}")
-df.to_json(path_or_buf=PATCHES_DF_PATH)
-print(f"Patch DF exported in {PATCHES_DF_PATH}")
