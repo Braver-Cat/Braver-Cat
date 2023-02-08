@@ -141,3 +141,6 @@ wandb/
 
 # Training checkpoints
 checkpoints/
+
+# Training configurations
+config/
