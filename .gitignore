@@ -143,4 +143,4 @@ wandb/
 checkpoints/
 
 # Training configurations
-config/
+configs/
