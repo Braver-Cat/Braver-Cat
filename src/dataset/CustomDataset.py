@@ -6,7 +6,7 @@ import numpy as np
 import json
 
 
-class BRATS2013Dataset(Dataset):
+class CustomDataset(Dataset):
 
   def __init__(self, obs_list, stage):
     

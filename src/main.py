@@ -1,8 +1,7 @@
 import argparse
 
 
-# from BRATS2013DatasetPatch import BRATS2013DatasetPatch
-from dataset.BRATS2013DatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
+from dataset.CustomDatasetLocalGlobalScalePatch import CustomDatasetLocalGlobalScalePatch
 
 
 from torch.utils.data import DataLoader
@@ -113,7 +112,7 @@ def get_datasets(parsed_args):
       parsed_args["global_scale_mean_std_path"]
     )
     
-  dataset_train = BRATS2013DatasetLocalGlobalScalePatch(
+  dataset_train = CustomDatasetLocalGlobalScalePatch(
     local_scale_df_path=local_scale_train_path,
     local_scale_patch_size=parsed_args["patch_size_local_scale"],
     local_scale_load_data_in_memory=parsed_args["load_data_in_memory"],
@@ -129,7 +128,7 @@ def get_datasets(parsed_args):
 
   )
   
-  dataset_val = BRATS2013DatasetLocalGlobalScalePatch(
+  dataset_val = CustomDatasetLocalGlobalScalePatch(
     local_scale_df_path=local_scale_val_path,
     local_scale_patch_size=parsed_args["patch_size_local_scale"],
     local_scale_load_data_in_memory=parsed_args["load_data_in_memory"],
@@ -144,7 +143,7 @@ def get_datasets(parsed_args):
 
   )
   
-  dataset_test = BRATS2013DatasetLocalGlobalScalePatch(
+  dataset_test = CustomDatasetLocalGlobalScalePatch(
     local_scale_df_path=local_scale_test_path,
     local_scale_patch_size=parsed_args["patch_size_local_scale"],
     local_scale_load_data_in_memory=parsed_args["load_data_in_memory"],

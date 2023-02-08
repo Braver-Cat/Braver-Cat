@@ -9,9 +9,9 @@ import numpy as np
 
 from tqdm import tqdm
 
-from dataset.BRATS2013DatasetPatch import BRATS2013DatasetPatch
+from dataset.CustomDatasetPatch import CustomDatasetPatch
 
-class BRATS2013DatasetLocalGlobalScalePatch(Dataset):
+class CustomDatasetLocalGlobalScalePatch(Dataset):
 
   def __init__(
       self, 
@@ -23,13 +23,13 @@ class BRATS2013DatasetLocalGlobalScalePatch(Dataset):
       stage
     ):
 
-    self.local_scale_dataset = BRATS2013DatasetPatch(
+    self.local_scale_dataset = CustomDatasetPatch(
       patch_df_path=local_scale_df_path, patch_size=local_scale_patch_size,
       load_data_in_memory=local_scale_load_data_in_memory, stage=stage,
       mean=local_scale_mean, std=local_scale_std
     )
     
-    self.global_scale_dataset = BRATS2013DatasetPatch(
+    self.global_scale_dataset = CustomDatasetPatch(
       patch_df_path=global_scale_df_path, patch_size=global_scale_patch_size,
       load_data_in_memory=global_scale_load_data_in_memory, stage=stage,
       mean=global_scale_mean, std=global_scale_std

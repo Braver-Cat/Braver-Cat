@@ -11,7 +11,7 @@ from rich import print
 
 DEFAULT_TENSOR_DTYPE = torch.float32
 
-class BRATS2013DatasetPatch(Dataset):
+class CustomDatasetPatch(Dataset):
 
   def __init__(
       self, patch_df_path, patch_size, load_data_in_memory, stage, 

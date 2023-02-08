@@ -5,10 +5,10 @@ import numpy as np
 
 import json
 
-from dataset.BRATS2013Dataset import BRATS2013Dataset
+from dataset.CustomDataset import CustomDataset
 
 
-class BRATS2013DatasetPatchMetadata(BRATS2013Dataset):
+class CustomDatasetPatchMetadata(CustomDataset):
 
   def __init__(self, obs_list, stage, patch_size):
 

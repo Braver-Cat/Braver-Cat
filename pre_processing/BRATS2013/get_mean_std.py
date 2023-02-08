@@ -2,7 +2,7 @@ import argparse
 
 import sys
 sys.path.append("../src")
-from dataset.BRATS2013DatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
+from dataset.CustomDatasetLocalGlobalScalePatch import BRATS2013DatasetLocalGlobalScalePatch
 
 import torch
 
