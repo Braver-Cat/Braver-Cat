@@ -10,7 +10,7 @@ def crop_center(img,cropx,cropy):
 
 SPLIT_ID = 0
 
-IS_BALANCED = "balanced"
+IS_BALANCED = "unbalanced"
 
 DF_PATCHES_65_BASE_PATH = f"../../data/LiTS17/LITS17_patches_65_{IS_BALANCED}/{SPLIT_ID}"
 
@@ -26,7 +26,7 @@ for stage in ["train", "val", "test"]:
 
   for row_idx, row in df.iterrows():
 
-    patch_65 = np.load(row["patch_65_x_65_img_path"])
+    patch_65 = np.load(row["patch_65_x_65_img_path"] + ".npy")
 
     patch_cropped = crop_center(patch_65, CROP_SIZE, CROP_SIZE)
 
@@ -39,7 +39,7 @@ for stage in ["train", "val", "test"]:
     df_cropped_rows.append(
       {
         f"patch_{CROP_SIZE}_x_{CROP_SIZE}_img_path": patch_cropped_export_path,
-        "patch_label_one_hot": row["patch_65_x_65_img_path"]
+        "patch_label_one_hot": row["patch_label_one_hot"]
       }
     )
 
