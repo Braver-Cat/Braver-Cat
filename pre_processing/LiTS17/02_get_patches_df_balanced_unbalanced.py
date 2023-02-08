@@ -25,7 +25,7 @@ SIZE = {
   "test": DATASET_SIZE - int(DATASET_SIZE * TRAIN_PERCENTAGE) - int(DATASET_SIZE * VAL_PERCENTAGE)
 }
 
-NUM_LABELS = 3
+NUM_LABELS = 6
 
 SIZE_PER_LABEL = {
   "train": int(SIZE["train"] / NUM_LABELS),
@@ -63,28 +63,34 @@ for stage in ["train", "val", "test"]:
 
   for patch_65 in patch_65_label_0_sampled:
 
+    patch_65 = patch_65[:-4]
+
     df_rows.append(
       {
         "patch_65_x_65_img_path": patch_65,
-        "patch_label_one_hot": [1, 0, 0]
+        "patch_label_one_hot": [1, 0, 0, 0, 0, 0]
       }
     )
   
   for patch_65 in patch_65_label_1_sampled:
 
+    patch_65 = patch_65[:-4]
+
     df_rows.append(
       {
         "patch_65_x_65_img_path": patch_65,
-        "patch_label_one_hot": [0, 1, 0]
+        "patch_label_one_hot": [0, 1, 0, 0, 0, 0]
       }
     )
   
   for patch_65 in patch_65_label_2_sampled:
 
+    patch_65 = patch_65[:-4]
+
     df_rows.append(
       {
         "patch_65_x_65_img_path": patch_65,
-        "patch_label_one_hot": [0, 0, 1]
+        "patch_label_one_hot": [0, 0, 1, 0, 0, 0]
       }
     )
 
@@ -117,6 +123,8 @@ for stage in ["train", "val", "test"]:
 
     label = int(patch_65[-5])
     label_one_hot = np.eye(NUM_LABELS)[label]
+
+    patch_65 = patch_65[:-4]
 
     df_rows.append(
       {
