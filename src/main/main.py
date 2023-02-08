@@ -1,10 +1,13 @@
 import argparse
 
+import sys
+sys.path.append("../")
 
 from dataset.CustomDatasetLocalGlobalScalePatch import CustomDatasetLocalGlobalScalePatch
 
 
 from torch.utils.data import DataLoader
+
 
 from model.TwoPathCNN import TwoPathCNN
 from model.InputCascadeCNN import InputCascadeCNN
@@ -73,7 +76,8 @@ def parse_cli_args():
       "Transfer Learning mode requires a checkpoint to be specified, "
       "so as weights can be loaded from it"
     )
-
+  
+  parsed_args["num_input_channels"] = 4 if "BRATS2013" in parsed_args["dataset_local_scale_df_path"] else 1
 
   return parsed_args
   
@@ -393,6 +397,9 @@ def handle_transfer_learning(parsed_args, model: InputCascadeCNN):
 
   if TRANSFER_LEARNING_STRING in job_type:
 
+    if parsed_args["num_input_channels"] == 1:
+      model.prepare_for_tl(new_in_channels=1, num_classes=DEFAULT_NUM_CLASSES)
+
     if parsed_args[job_type]["local_scale_freeze_first_layers"]:
       model.local_scale_CNN.freeze_first_layers()
     
@@ -440,7 +447,9 @@ def main():
 
   model = get_model(
     cascade_type=parsed_args["cascade_type"], 
-    num_input_channels=parsed_args["num_input_channels"], 
+    # always init with the default num of in channels (4)
+    # modify num in channels in handle_transfer_learning method, if needed
+    num_input_channels=DEFAULT_NUM_INPUT_CHANNELS, 
     num_classes=parsed_args["num_classes"],
     dropout=parsed_args["dropout"], 
     device=device

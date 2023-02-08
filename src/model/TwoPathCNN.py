@@ -7,12 +7,14 @@ UNIFORM_INIT_LOWER_BOUND = -0.005
 UNIFORM_INIT_UPPER_BOUND = +0.005
 
 class TwoPathCNN(nn.Module):
-  def __init__(self, num_input_channels, num_classes, dropout):
+  def __init__(self, num_input_channels, num_classes, dropout, model_role):
     
     super().__init__()
 
     self.num_input_channels = num_input_channels
     self.num_classes = num_classes
+
+    self.model_role = model_role
 
     ### BEGIN local path, conv_0 block
 
@@ -253,3 +255,71 @@ class TwoPathCNN(nn.Module):
   def freeze_last_layer(self):
 
     self.freeze_layer(layer=self.concat_conv_0)
+    
+  def prepare_for_tl(self, new_in_channels):
+
+    ### BEGIN 
+    
+    local_conv_0_maxout_unit_0_old_state_dict = self.local_conv_0_maxout_unit_0.state_dict()
+
+    self.local_conv_0_maxout_unit_0 = nn.Conv2d(
+      in_channels=new_in_channels, kernel_size=7, out_channels=64
+    )
+
+    local_conv_0_maxout_unit_0_old_state_dict["weight"] = local_conv_0_maxout_unit_0_old_state_dict["weight"][:, : new_in_channels, ...]
+    # local_conv_0_maxout_unit_0_old_state_dict["weight"] = local_conv_0_maxout_unit_0_old_state_dict["weight"].unsqueeze(1)
+
+    self.local_conv_0_maxout_unit_0.load_state_dict(
+      local_conv_0_maxout_unit_0_old_state_dict
+    )
+
+    ### END
+    
+    ### BEGIN 
+    
+    local_conv_0_maxout_unit_1_old_state_dict = self.local_conv_0_maxout_unit_1.state_dict()
+
+    self.local_conv_0_maxout_unit_1 = nn.Conv2d(
+      in_channels=new_in_channels, kernel_size=7, out_channels=64
+    )
+
+    local_conv_0_maxout_unit_1_old_state_dict["weight"] = local_conv_0_maxout_unit_1_old_state_dict["weight"][:, : new_in_channels, ...]
+    # local_conv_0_maxout_unit_1_old_state_dict["weight"] = local_conv_0_maxout_unit_1_old_state_dict["weight"].unsqueeze(1)
+
+    self.local_conv_0_maxout_unit_1.load_state_dict(
+      local_conv_0_maxout_unit_1_old_state_dict
+    )
+
+    # END
+
+    ### BEGIN 
+    
+    global_conv_0_maxout_unit_0_old_state_dict = self.global_conv_0_maxout_unit_0.state_dict()
+
+    self.global_conv_0_maxout_unit_0 = nn.Conv2d(
+      in_channels=new_in_channels, kernel_size=13, out_channels=160
+    )
+
+    global_conv_0_maxout_unit_0_old_state_dict["weight"] = global_conv_0_maxout_unit_0_old_state_dict["weight"][:, : new_in_channels, ...]
+
+    self.global_conv_0_maxout_unit_0.load_state_dict(
+      global_conv_0_maxout_unit_0_old_state_dict
+    )
+
+    ### END
+
+    ### BEGIN 
+    
+    global_conv_0_maxout_unit_1_old_state_dict = self.global_conv_0_maxout_unit_1.state_dict()
+
+    self.global_conv_0_maxout_unit_1 = nn.Conv2d(
+      in_channels=new_in_channels, kernel_size=13, out_channels=160
+    )
+
+    global_conv_0_maxout_unit_1_old_state_dict["weight"] = global_conv_0_maxout_unit_1_old_state_dict["weight"][:, : new_in_channels, ...]
+
+    self.global_conv_0_maxout_unit_1.load_state_dict(
+      global_conv_0_maxout_unit_1_old_state_dict
+    )
+
+    ### END

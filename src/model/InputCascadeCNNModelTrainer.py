@@ -244,18 +244,28 @@ class InputCascadeCNNModelTrainer():
         patch_local_scale = batch_train["local_scale"]["patch"].to(self.device)
         
         patch_global_scale = batch_train["global_scale"]["patch"].to(self.device)
+
         label_global_scale = batch_train["global_scale"]["patch_label"].to(self.device)
         label_global_scale = label_global_scale.squeeze(1)
 
         local_scale_mean = batch_train["local_scale"]["mean"].to(self.device)
-        local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
         local_scale_std = batch_train["local_scale"]["std"].to(self.device)
-        local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
         
         global_scale_mean = batch_train["global_scale"]["mean"].to(self.device)
-        global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
         global_scale_std = batch_train["global_scale"]["std"].to(self.device)
+
+        local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
+        local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+        global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
         global_scale_std = global_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+        if patch_local_scale.shape[1] == 1 and patch_global_scale.shape[1] == 1:
+          local_scale_mean = local_scale_mean.unsqueeze(-1)
+          local_scale_std = local_scale_std.unsqueeze(-1)
+
+          global_scale_mean = global_scale_mean.unsqueeze(-1)
+          global_scale_std = global_scale_std.unsqueeze(-1)
 
         patch_local_scale = (patch_local_scale - local_scale_mean) / local_scale_std
         patch_global_scale = (patch_global_scale - global_scale_mean) / global_scale_std
@@ -318,14 +328,23 @@ class InputCascadeCNNModelTrainer():
           label_global_scale = label_global_scale.squeeze(1)
 
           local_scale_mean = batch_val["local_scale"]["mean"].to(self.device)
-          local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
           local_scale_std = batch_val["local_scale"]["std"].to(self.device)
-          local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
           
           global_scale_mean = batch_val["global_scale"]["mean"].to(self.device)
-          global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
           global_scale_std = batch_val["global_scale"]["std"].to(self.device)
+
+          local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
+          local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
+          global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
           global_scale_std = global_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+          if patch_local_scale.shape[1] == 1 and patch_global_scale.shape[1] == 1:
+            local_scale_mean = local_scale_mean.unsqueeze(-1)
+            local_scale_std = local_scale_std.unsqueeze(-1)
+
+            global_scale_mean = global_scale_mean.unsqueeze(-1)
+            global_scale_std = global_scale_std.unsqueeze(-1)
+
 
           patch_local_scale = (patch_local_scale - local_scale_mean) / local_scale_std
           patch_global_scale = (patch_global_scale - global_scale_mean) / global_scale_std
@@ -443,14 +462,23 @@ class InputCascadeCNNModelTrainer():
         label_global_scale = label_global_scale.squeeze(1)
 
         local_scale_mean = batch_test["local_scale"]["mean"].to(self.device)
-        local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
         local_scale_std = batch_test["local_scale"]["std"].to(self.device)
-        local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
         
         global_scale_mean = batch_test["global_scale"]["mean"].to(self.device)
-        global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
         global_scale_std = batch_test["global_scale"]["std"].to(self.device)
+
+        local_scale_mean = local_scale_mean.unsqueeze(-1).unsqueeze(-1)
+        local_scale_std = local_scale_std.unsqueeze(-1).unsqueeze(-1)
+        global_scale_mean = global_scale_mean.unsqueeze(-1).unsqueeze(-1)
         global_scale_std = global_scale_std.unsqueeze(-1).unsqueeze(-1)
+
+        if patch_local_scale.shape[1] == 1 and patch_global_scale.shape[1] == 1:
+          local_scale_mean = local_scale_mean.unsqueeze(-1)
+          local_scale_std = local_scale_std.unsqueeze(-1)
+
+          global_scale_mean = global_scale_mean.unsqueeze(-1)
+          global_scale_std = global_scale_std.unsqueeze(-1)
+
 
         patch_local_scale = (patch_local_scale - local_scale_mean) / local_scale_std
         patch_global_scale = (patch_global_scale - global_scale_mean) / global_scale_std
@@ -486,6 +514,7 @@ class InputCascadeCNNModelTrainer():
 
     try:
       self.dashboard.start()
+      self.dashboard.stop()
 
       self._train()
 

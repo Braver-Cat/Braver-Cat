@@ -50,7 +50,7 @@ class CustomDatasetPatch(Dataset):
   def __getitem__(self, idx):
 
     if self.load_data_in_memory:
-      patch = self.data[idx]
+      patch = self.data[idx] if len(self.data[idx].shape) == 3 else self.data[idx].unsqueeze(0)
       patch_label = self.labels[idx]
 
     else:
@@ -61,6 +61,7 @@ class CustomDatasetPatch(Dataset):
         ),
         dtype=DEFAULT_TENSOR_DTYPE
       )
+      patch = patch if len(patch.shape) == 3 else patch.unsqueeze(0)
 
       patch_label = torch.tensor(
         data=self.patch_df.iloc[idx][self.label_column_name], 
