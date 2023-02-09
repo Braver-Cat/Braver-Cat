@@ -463,16 +463,16 @@ def main():
     momentum=parsed_args["momentum"], 
   )
 
-  model, optimizer, learning_rate_scheduler = populate_state_dicts(
-    checkpoint_from_disk, other_args["resumed_from_checkpoint"], model, 
-    optimizer, learning_rate_scheduler, parsed_args
-  )
-
   if parsed_args["num_input_channels"] != DEFAULT_NUM_INPUT_CHANNELS:
     model.change_num_in_channels(
       new_in_channels=parsed_args["num_input_channels"], 
       num_classes=DEFAULT_NUM_CLASSES
     )
+
+  model, optimizer, learning_rate_scheduler = populate_state_dicts(
+    checkpoint_from_disk, other_args["resumed_from_checkpoint"], model, 
+    optimizer, learning_rate_scheduler, parsed_args
+  )
 
   model = handle_transfer_learning(parsed_args=parsed_args, model=model)
 
