@@ -57,3 +57,8 @@ class WandBHelper():
         "train/lr": learning_rate
       }
     )
+
+  def get_run_url(self):
+    return wandb.run.get_url()
+  
+  

@@ -6,6 +6,8 @@ from rich import print
 from utils.Dashboard import Dashboard
 import traceback
 
+from utils import WandBHelper
+
 PBAR_EPOCHS_COLOR = "#830a48"
 PBAR_TRAIN_COLOR = "#2a9d8f"
 PBAR_VAL_COLOR = "#065a82"
@@ -26,7 +28,7 @@ class InputCascadeCNNModelTrainer():
     dl_train, dl_val, dl_test, 
     delta_1, delta_2,
     checkpoint_full_path, checkpoint_step, train_id, resumed_from_checkpoint,
-    starting_epoch, wandb_helper, 
+    starting_epoch, wandb_helper: WandBHelper, 
     best_epoch_train_acc, best_epoch_train_loss,
     best_train_acc, best_train_loss, delta_train_loss, 
     best_val_acc, best_val_loss, delta_val_loss, 
@@ -72,7 +74,7 @@ class InputCascadeCNNModelTrainer():
     self.num_epochs = num_epochs
     self.last_epoch = self.starting_epoch + self.num_epochs
 
-    self.wandb_helper = wandb_helper
+    self.wandb_helper: WandBHelper = wandb_helper
 
     self.best_epoch_train_acc = best_epoch_train_acc
     self.best_epoch_train_loss = best_epoch_train_loss
@@ -226,6 +228,10 @@ class InputCascadeCNNModelTrainer():
       delta_val_loss = self.delta_val_loss,
       best_epoch_val_acc = self.best_epoch_val_acc,
       best_epoch_val_loss = self.best_epoch_val_loss
+    )
+
+    self.dashboard.println(
+      out=self.wandb_helper.get_run_url() if self.wandb_helper is not None else ""
     )
     
     for epoch in range(self.starting_epoch, self.last_epoch):
