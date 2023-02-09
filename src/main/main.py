@@ -220,7 +220,7 @@ def get_model_trainer(
     delta_val_loss,
     best_epoch_val_acc,
     best_epoch_val_loss,
-    disable_dashboard
+    disable_dashboard, terminal_theme
   ):
 
   if model.cascade_type == "input":
@@ -256,7 +256,7 @@ def get_model_trainer(
       delta_val_loss=delta_val_loss,
       best_epoch_val_acc=best_epoch_val_acc,
       best_epoch_val_loss=best_epoch_val_loss,
-      disable_dashboard=disable_dashboard
+      disable_dashboard=disable_dashboard, terminal_theme=terminal_theme
     )
   
 def get_optimizer(
@@ -524,7 +524,8 @@ def main():
     delta_val_loss = statistics_dict["delta_val_loss"],
     best_epoch_val_acc = statistics_dict["best_epoch_val_acc"],
     best_epoch_val_loss = statistics_dict["best_epoch_val_loss"],
-    disable_dashboard=parsed_args["disable_dashboard"]
+    disable_dashboard=parsed_args["disable_dashboard"],
+    terminal_theme=parsed_args["terminal_theme"]
   )
 
   if not parsed_args["disable_wandb"]:  

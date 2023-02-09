@@ -31,7 +31,7 @@ class InputCascadeCNNModelTrainer():
     best_train_acc, best_train_loss, delta_train_loss, 
     best_val_acc, best_val_loss, delta_val_loss, 
     best_epoch_val_acc, best_epoch_val_loss,
-    disable_dashboard
+    disable_dashboard, terminal_theme
   ):
     
     self.device = device
@@ -97,6 +97,7 @@ class InputCascadeCNNModelTrainer():
     self.running_test_acc = 0
 
     self.disable_dashboard = disable_dashboard
+    self.terminal_theme = terminal_theme
 
   def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
 
@@ -508,12 +509,17 @@ class InputCascadeCNNModelTrainer():
 
     print()
 
-    self.dashboard = Dashboard({
-      "n_epochs": self.num_epochs,
-      "train_batches": self.num_batches_train,
-      "val_batches": self.num_batches_val,
-      "test_batches": self.num_batches_test
-    })
+    self.dashboard = Dashboard(
+      params={
+        "n_epochs": self.num_epochs,
+        "train_batches": self.num_batches_train,
+        "val_batches": self.num_batches_val,
+        "test_batches": self.num_batches_test,
+        "batch_size": self.batch_size,
+        "device": torch.cuda.get_device_name(device=self.device)
+      }, 
+      terminal_theme=self.terminal_theme
+    )
 
     try:
       self.dashboard.start()
