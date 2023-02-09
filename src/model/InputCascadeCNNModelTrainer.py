@@ -511,7 +511,7 @@ class InputCascadeCNNModelTrainer():
 
     self.dashboard = Dashboard(
       params={
-        "n_epochs": self.num_epochs,
+        "n_epochs": self.last_epoch,
         "train_batches": self.num_batches_train,
         "val_batches": self.num_batches_val,
         "test_batches": self.num_batches_test,
