@@ -256,7 +256,7 @@ class TwoPathCNN(nn.Module):
 
     self.freeze_layer(layer=self.concat_conv_0)
     
-  def prepare_for_tl(self, new_in_channels):
+  def change_num_in_channels(self, new_in_channels):
 
     ### BEGIN 
     

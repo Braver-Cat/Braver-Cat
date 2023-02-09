@@ -113,9 +113,9 @@ class InputCascadeCNN(nn.Module):
     self.global_scale_CNN.load_state_dict(global_state_dict)
 
 
-  def prepare_for_tl(self, new_in_channels, num_classes):
+  def change_num_in_channels(self, new_in_channels, num_classes):
 
-    self.local_scale_CNN.prepare_for_tl(
+    self.local_scale_CNN.change_num_in_channels(
       new_in_channels=new_in_channels + num_classes
     )
-    self.global_scale_CNN.prepare_for_tl(new_in_channels=new_in_channels)
+    self.global_scale_CNN.change_num_in_channels(new_in_channels=new_in_channels)

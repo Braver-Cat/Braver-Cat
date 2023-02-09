@@ -219,7 +219,8 @@ def get_model_trainer(
     best_val_loss,
     delta_val_loss,
     best_epoch_val_acc,
-    best_epoch_val_loss
+    best_epoch_val_loss,
+    disable_dashboard
   ):
 
   if model.cascade_type == "input":
@@ -254,7 +255,8 @@ def get_model_trainer(
       best_val_loss=best_val_loss,
       delta_val_loss=delta_val_loss,
       best_epoch_val_acc=best_epoch_val_acc,
-      best_epoch_val_loss=best_epoch_val_loss
+      best_epoch_val_loss=best_epoch_val_loss,
+      disable_dashboard=disable_dashboard
     )
   
 def get_optimizer(
@@ -397,9 +399,6 @@ def handle_transfer_learning(parsed_args, model: InputCascadeCNN):
 
   if TRANSFER_LEARNING_STRING in job_type:
 
-    if parsed_args["num_input_channels"] == 1:
-      model.prepare_for_tl(new_in_channels=1, num_classes=DEFAULT_NUM_CLASSES)
-
     if parsed_args[job_type]["local_scale_freeze_first_layers"]:
       model.local_scale_CNN.freeze_first_layers()
     
@@ -469,6 +468,12 @@ def main():
     optimizer, learning_rate_scheduler, parsed_args
   )
 
+  if parsed_args["num_input_channels"] != DEFAULT_NUM_INPUT_CHANNELS:
+    model.change_num_in_channels(
+      new_in_channels=parsed_args["num_input_channels"], 
+      num_classes=DEFAULT_NUM_CLASSES
+    )
+
   model = handle_transfer_learning(parsed_args=parsed_args, model=model)
 
   other_args["train_id"] = get_train_id()
@@ -518,7 +523,8 @@ def main():
     best_val_loss = statistics_dict["best_val_loss"],
     delta_val_loss = statistics_dict["delta_val_loss"],
     best_epoch_val_acc = statistics_dict["best_epoch_val_acc"],
-    best_epoch_val_loss = statistics_dict["best_epoch_val_loss"]
+    best_epoch_val_loss = statistics_dict["best_epoch_val_loss"],
+    disable_dashboard=parsed_args["disable_dashboard"]
   )
 
   if not parsed_args["disable_wandb"]:  

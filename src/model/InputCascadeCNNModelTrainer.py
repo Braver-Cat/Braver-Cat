@@ -30,7 +30,8 @@ class InputCascadeCNNModelTrainer():
     best_epoch_train_acc, best_epoch_train_loss,
     best_train_acc, best_train_loss, delta_train_loss, 
     best_val_acc, best_val_loss, delta_val_loss, 
-    best_epoch_val_acc, best_epoch_val_loss
+    best_epoch_val_acc, best_epoch_val_loss,
+    disable_dashboard
   ):
     
     self.device = device
@@ -94,6 +95,8 @@ class InputCascadeCNNModelTrainer():
     self.running_val_loss = np.inf
 
     self.running_test_acc = 0
+
+    self.disable_dashboard = disable_dashboard
 
   def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
 
@@ -514,7 +517,9 @@ class InputCascadeCNNModelTrainer():
 
     try:
       self.dashboard.start()
-      self.dashboard.stop()
+
+      if self.disable_dashboard:
+        self.dashboard.stop()
 
       self._train()
 
