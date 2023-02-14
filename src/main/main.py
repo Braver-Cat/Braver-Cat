@@ -39,6 +39,7 @@ GPU_NAME = "GeForce"
 
 wandb_project_name = "Braver-Cat"
 WANDB_ENTITY_NAME = "Braver-Cat"
+WANDB_DIR = "../../wandb"
 
 TRANSFER_LEARNING_STRING = "_tl"
 END_TO_END_LEARNING_STRING = "_e2e"
@@ -495,7 +496,7 @@ def main():
     wandb_project_name += "-Transfer-Learning" if TRANSFER_LEARNING_STRING in parsed_args["job_type"] else "-End-to-End"
     
     wandb_helper = WandBHelper(
-      project=wandb_project_name, entity=WANDB_ENTITY_NAME,
+      project=wandb_project_name, dir=WANDB_DIR, entity=WANDB_ENTITY_NAME,
       parsed_args=parsed_args, other_args=other_args, model=model
     )
 

@@ -3,10 +3,11 @@ import wandb
 class WandBHelper():
     
   def __init__(
-    self, project, entity, parsed_args, other_args, model
+    self, project, dir, entity, parsed_args, other_args, model
   ):
     
     self.project = project
+    self.dir = dir
     self.entity = entity
     self.parsed_args = parsed_args
     self.other_args = other_args
@@ -25,7 +26,7 @@ class WandBHelper():
   def init_run(self):
 
     self.run = wandb.init(
-      project=self.project, entity=self.entity, 
+      project=self.project, dir=self.dir, entity=self.entity, 
       config=self._merge_dicts(
         dict_1=self.parsed_args, 
         dict_2=self.other_args
