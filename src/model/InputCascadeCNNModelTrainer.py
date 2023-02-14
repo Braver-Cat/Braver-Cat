@@ -33,7 +33,8 @@ class InputCascadeCNNModelTrainer():
     best_train_acc, best_train_loss, delta_train_loss, 
     best_val_acc, best_val_loss, delta_val_loss, 
     best_epoch_val_acc, best_epoch_val_loss,
-    disable_dashboard, terminal_theme
+    disable_dashboard, terminal_theme,
+    layers_to_switch, layers_to_turn_off, layers_to_copy, layers_to_copy_copy_mode
   ):
     
     self.device = device
@@ -100,6 +101,11 @@ class InputCascadeCNNModelTrainer():
 
     self.disable_dashboard = disable_dashboard
     self.terminal_theme = terminal_theme
+
+    self.layers_to_switch = layers_to_switch
+    self.layers_to_turn_off = layers_to_turn_off
+    self.layers_to_copy = layers_to_copy
+    self.layers_to_copy_copy_mode = layers_to_copy_copy_mode
 
   def _store_checkpoint(self, checkpoint_path_suffix, checkpoint_epoch):
 
@@ -419,42 +425,15 @@ class InputCascadeCNNModelTrainer():
     return 0
   
   def _test(self):
-
-    # TODO parametrize this.
-
-    # layers_to_switch = [
-    #   "local_conv_1_maxout_unit_0", 
-    #   "local_conv_1_maxout_unit_1",
-    #   # "concat_conv_0"
-    # ]
     
-    # self.model.switch_local_global_scale_layers(layers_to_switch)
+    self.model.switch_local_global_scale_layers(self.layers_to_switch)
 
-    # layers_to_turn_off = [
-    #   # "local_conv_0_maxout_unit_0", 
-    #   # "local_conv_0_maxout_unit_1",
-
-    #   # "local_conv_1_maxout_unit_0", 
-    #   # "local_conv_1_maxout_unit_1" , 
-      
-    #   # "global_conv_0_maxout_unit_0", 
-    #   # "global_conv_0_maxout_unit_1", 
-    #   # "concat_conv_0"
-    # ]
-
-    # self.model.turn_off_layers(
-    #   layers_to_turn_off=layers_to_turn_off, model=self.model.local_scale_CNN
-    # )
-
-    # layers_to_copy = [
-    #   "local_conv_1_maxout_unit_0", 
-    #   "local_conv_1_maxout_unit_1",
-    #   "concat_conv_0"
-    # ]
-    # # copy_mode = "local_to_global"
-    # copy_mode = "global_to_local"
+    self.model.turn_off_layers(
+      layers_to_turn_off=self.layers_to_turn_off, 
+      model=self.model.local_scale_CNN
+    )
     
-    # self.model.copy_layers(layers_to_copy, copy_mode)
+    self.model.copy_layers(self.layers_to_copy, self.layers_to_copy_copy_mode)
 
     with torch.no_grad():
 

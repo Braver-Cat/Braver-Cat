@@ -220,7 +220,9 @@ def get_model_trainer(
     delta_val_loss,
     best_epoch_val_acc,
     best_epoch_val_loss,
-    disable_dashboard, terminal_theme
+    disable_dashboard, terminal_theme,
+    layers_to_switch, layers_to_turn_off, layers_to_copy, 
+    layers_to_copy_copy_mode
   ):
 
   if model.cascade_type == "input":
@@ -256,7 +258,11 @@ def get_model_trainer(
       delta_val_loss=delta_val_loss,
       best_epoch_val_acc=best_epoch_val_acc,
       best_epoch_val_loss=best_epoch_val_loss,
-      disable_dashboard=disable_dashboard, terminal_theme=terminal_theme
+      disable_dashboard=disable_dashboard, terminal_theme=terminal_theme,
+      layers_to_switch=layers_to_switch,
+      layers_to_turn_off=layers_to_turn_off,
+      layers_to_copy=layers_to_copy,
+      layers_to_copy_copy_mode=layers_to_copy_copy_mode
     )
   
 def get_optimizer(
@@ -525,7 +531,11 @@ def main():
     best_epoch_val_acc = statistics_dict["best_epoch_val_acc"],
     best_epoch_val_loss = statistics_dict["best_epoch_val_loss"],
     disable_dashboard=parsed_args["disable_dashboard"],
-    terminal_theme=parsed_args["terminal_theme"]
+    terminal_theme=parsed_args["terminal_theme"],
+    layers_to_switch = parsed_args["layers_to_switch"], 
+    layers_to_turn_off = parsed_args["layers_to_turn_off"], 
+    layers_to_copy = parsed_args["layers_to_copy"], 
+    layers_to_copy_copy_mode = parsed_args["layers_to_copy_copy_mode"], 
   )
 
   if not parsed_args["disable_wandb"]:  
