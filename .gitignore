@@ -131,8 +131,6 @@ dmypy.json
 .vscode/
 
 data/*
-!data/*.txt
-!data/*summary_statistics.json
 
 resources/
 
