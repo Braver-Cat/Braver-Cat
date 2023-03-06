@@ -130,6 +130,7 @@ dmypy.json
 
 .vscode/
 
+data_old/*
 data/*
 
 resources/
