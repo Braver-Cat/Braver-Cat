@@ -51,7 +51,7 @@ for split in SPLIT:
 
   sampled_df_list = None
 
-  n_processes = 2 if split == "train" else len(label_list)
+  n_processes = 2 if split == "train" else 3
 
   with mp.Pool(processes = n_processes) as p:
     
