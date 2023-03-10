@@ -13,8 +13,8 @@ DATASET_SIZE = 50000
 TRAIN_PERCENTAGE = 0.6
 VAL_PERCENTAGE = 0.2
 
-SAMPLED_DF_BASE_PATH = "../data/BRATS2013_unbalanced"
-TO_EXCLUDE_DF_BASE_PATH = "../data/BRATS2013_balanced"
+SAMPLED_DF_BASE_PATH = "../data/BRATS2013_unbalanced/metadata"
+TO_EXCLUDE_DF_BASE_PATH = "../data/BRATS2013_balanced/metadata"
 
 split_sizes = {
   "train": int(DATASET_SIZE * TRAIN_PERCENTAGE),
