@@ -15,7 +15,7 @@ DATASET_SIZE = int(50000 / NUM_LABELS)
 TRAIN_PERCENTAGE = 0.6
 VAL_PERCENTAGE = 0.2
 
-SAMPLED_DF_BASE_PATH = "../data/BRATS2013_balanced"
+SAMPLED_DF_BASE_PATH = "../data/BRATS2013_balanced/slice_metadata"
 
 split_sizes_label = {
   "train": int(DATASET_SIZE * TRAIN_PERCENTAGE),
