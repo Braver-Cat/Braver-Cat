@@ -2,12 +2,14 @@ import pytorch_lightning as pl
 import TwoPathCNN
 import torch
 from torch.nn import functional as F
+from torch.optim import *
+from torch.optim.lr_scheduler import *
 
 class InputCascadeCNNModule(pl.LightningModule):
     
   def __init__(
       self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN,
-      optim_conf: dict
+      optim_conf: dict, scheduler_conf: dict
     ):
     
     super().__init__()
@@ -16,6 +18,7 @@ class InputCascadeCNNModule(pl.LightningModule):
     self.local_scale_CNN = local_scale_CNN
 
     self.optim_conf = optim_conf
+    self.scheduler_conf = scheduler_conf
 
 
   def forward(self, x_global, x_local) -> torch.tensor:
@@ -51,20 +54,35 @@ class InputCascadeCNNModule(pl.LightningModule):
   def predict_step(self, batch, batch_idx):
     return self._common_step(batch)
 
-  
-  def configure_optimizers(self):
+  def _configure_optimizers(self):
 
     if self.optim_conf["name"] == "SGD":
       
-      return torch.optim.SGD(
-        params=self.parameters(), lr=self.optim_conf["lr"]
+      return SGD(
+        params=self.parameters(), lr=self.optim_conf["lr"], 
+        momentum=self.optim_conf["momentum"], 
+        weight_decay=self.optim_conf["weight_decay"]
       )
     
     else:
-
-      raise ValueError(
-        f"Optimizer named {self.optim_conf['name']} not supported"
+      raise ValueError(f"Optimizer {self.optim_conf['name']} not supported")
+    
+  def _configure_schedulers(self, optim):
+    
+    if self.scheduler_conf["name"] == "StepLR":
+      return StepLR(
+        optimizer=optim, step_size=self.scheduler_conf["step_size"], 
+        gamma=self.scheduler_conf["gamma"]
       )
+
+  def configure_optimizers(self):
+
+    optim = self._configure_optimizers() 
+
+    return {
+      "optimizer": optim, 
+      "lr_scheduler": self._configure_schedulers(optim)
+    }
   
 
 def __main__():
