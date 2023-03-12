@@ -26,6 +26,7 @@ class GlobalLocalScalePatchesDataset(Dataset):
     return {
       "patch_global_scale": self.transforms(torch.tensor(np.load(df_row["global_patch_path"]))),
       "patch_local_scale": self.transforms(torch.tensor(np.load(df_row["local_patch_path"]))),
+      "patch_label": torch.tensor(df_row["patch_label"]),
       "patch_label_one_hot": torch.tensor(df_row["patch_label_one_hot"])
     }
   
