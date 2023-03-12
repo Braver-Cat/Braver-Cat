@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from rich import print
 
-class TwoPathCNNModule(pl.LightningModule):
+class TwoPathCNNModule(nn.Module):
     
   def __init__(
       self, global_path_CNN: GlobalPathCNN, local_path_CNN: LocalPathCNN,
