@@ -55,5 +55,6 @@ def __main__():
   two_path_CNN.forward(x)
 
 
-__main__()
+if __name__ == "__main__":
+  __main__()
     

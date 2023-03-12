@@ -55,5 +55,5 @@ def __main__():
 
   input_cascade_CNN.forward(x_global, x_local)
 
-
-__main__()
+if __name__ == "__main__":
+  __main__()

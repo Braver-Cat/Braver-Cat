@@ -105,4 +105,6 @@ def __main__():
     pb.advance(pb_dataset_benchmark_task)
   pb.stop()
 
-__main__()
+
+if __name__ == "__main__":
+  __main__()
