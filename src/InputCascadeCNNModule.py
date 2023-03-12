@@ -18,7 +18,7 @@ class InputCascadeCNNModule(pl.LightningModule):
     self.optim_conf = optim_conf
 
 
-  def forward(self, x_global, x_local):
+  def forward(self, x_global, x_local) -> torch.tensor:
 
     x = self.global_scale_CNN.forward(x_global)
 
@@ -34,6 +34,7 @@ class InputCascadeCNNModule(pl.LightningModule):
     label_one_hot = batch["patch_label_one_hot"]
     
     pred_one_hot = self.forward(patch_global_scale, patch_local_scale)
+    pred_one_hot = pred_one_hot.squeeze(-1).squeeze(-1)
     
     return F.cross_entropy(pred_one_hot, label_one_hot)
 
