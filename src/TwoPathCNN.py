@@ -41,13 +41,9 @@ def __main__():
 
   NUM_CLASSES = 5
 
-  global_path_CNN = GlobalPathCNN(
-    in_channels=4, out_channels=160, dropout_p=0.2
-  )
+  global_path_CNN = GlobalPathCNN(in_channels=4, dropout_p=0.2)
   
-  local_path_CNN = LocalPathCNN(
-    in_channels=4, out_channels=64, dropout_p=0.3
-  )
+  local_path_CNN = LocalPathCNN(in_channels=4, dropout_p=0.3)
 
   two_path_CNN = TwoPathCNN(
     global_path_CNN=global_path_CNN, local_path_CNN=local_path_CNN, 

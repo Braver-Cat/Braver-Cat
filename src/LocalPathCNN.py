@@ -16,7 +16,7 @@ class LocalPathCNN(nn.Module):
     self.max_pool_0 = nn.MaxPool2d(kernel_size=4, stride=1)
     
     self.maxout_layer_1 = MaxOutLayer(
-      in_channels=64, out_channels=21, kernel_size=3
+      in_channels=64, out_channels=64, kernel_size=3
     )
 
     self.max_pool_1 = nn.MaxPool2d(kernel_size=2, stride=1)

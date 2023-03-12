@@ -10,7 +10,7 @@ class GlobalPathCNN(nn.Module):
     super().__init__()
 
     self.maxout_layer = MaxOutLayer(
-      in_channels=in_channels, out_channels=21, kernel_size=13
+      in_channels=in_channels, out_channels=160, kernel_size=13
     )
 
     self.dropout = torch.nn.Dropout2d(p=dropout_p)
