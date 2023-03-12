@@ -49,7 +49,7 @@ def __main__():
     in_channels=4, out_channels=64, dropout_p=0.3
   )
 
-  two_path_CNN = TwoPathCNNModule(
+  two_path_CNN = TwoPathCNN(
     global_path_CNN=global_path_CNN, local_path_CNN=local_path_CNN, 
     out_channels=NUM_CLASSES
   )
