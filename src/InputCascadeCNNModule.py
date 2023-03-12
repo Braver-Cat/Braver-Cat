@@ -4,12 +4,13 @@ import torch
 from torch.nn import functional as F
 from torch.optim import *
 from torch.optim.lr_scheduler import *
+from torchmetrics import Accuracy
 
 class InputCascadeCNNModule(pl.LightningModule):
     
   def __init__(
       self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN,
-      optim_conf: dict, scheduler_conf: dict
+      optim_conf: dict, scheduler_conf: dict, num_classes: int
     ):
     
     super().__init__()
@@ -20,6 +21,7 @@ class InputCascadeCNNModule(pl.LightningModule):
     self.optim_conf = optim_conf
     self.scheduler_conf = scheduler_conf
 
+    self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
 
   def forward(self, x_global, x_local) -> torch.tensor:
 
@@ -31,28 +33,36 @@ class InputCascadeCNNModule(pl.LightningModule):
 
     return x
   
-  def _common_step(self, batch):
+  def _common_step(self, batch, stage):
     patch_global_scale = batch["patch_global_scale"]
     patch_local_scale = batch["patch_local_scale"] 
     label_one_hot = batch["patch_label_one_hot"]
+    label = batch["patch_label"]
     
     pred_one_hot = self.forward(patch_global_scale, patch_local_scale)
     pred_one_hot = pred_one_hot.squeeze(-1).squeeze(-1)
+
+    loss = F.cross_entropy(pred_one_hot, label_one_hot)
+    acc = self.accuracy(pred_one_hot, label)
+
+    if stage == "train" or stage == "val":
+      self.log(f"loss/{stage}", loss, on_epoch=True, on_step=False, prog_bar=True)
+      self.log(f"acc/{stage}", acc, on_epoch=True, on_step=False, prog_bar=True)
     
-    return F.cross_entropy(pred_one_hot, label_one_hot)
+    return loss
 
   
   def training_step(self, batch, batch_idx):
-    return self._common_step(batch)
+    return self._common_step(batch, "train")
   
   def validation_step(self, batch, batch_idx):
-    return self._common_step(batch)
+    return self._common_step(batch, "val")
 
   def test_step(self, batch, batch_idx):
-    return self._common_step(batch)
+    return self._common_step(batch, "test")
 
   def predict_step(self, batch, batch_idx):
-    return self._common_step(batch)
+    return self._common_step(batch, "prediction")
 
   def _configure_optimizers(self):
 
