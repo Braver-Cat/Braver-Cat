@@ -1,17 +1,21 @@
 import pytorch_lightning as pl
 import TwoPathCNN
 import torch
+from torch.nn import functional as F
 
 class InputCascadeCNNModule(pl.LightningModule):
     
   def __init__(
-      self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN
+      self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN,
+      optim_conf: dict
     ):
     
     super().__init__()
 
     self.global_scale_CNN = global_scale_CNN
     self.local_scale_CNN = local_scale_CNN
+
+    self.optim_conf = optim_conf
 
 
   def forward(self, x_global, x_local):
@@ -23,6 +27,43 @@ class InputCascadeCNNModule(pl.LightningModule):
     x = self.local_scale_CNN.forward(x)
 
     return x
+  
+  def _common_step(self, batch):
+    patch_global_scale = batch["patch_global_scale"]
+    patch_local_scale = batch["patch_local_scale"] 
+    label_one_hot = batch["patch_label_one_hot"]
+    
+    pred_one_hot = self.forward(patch_global_scale, patch_local_scale)
+    
+    return F.cross_entropy(pred_one_hot, label_one_hot)
+
+  
+  def training_step(self, batch, batch_idx):
+    return self._common_step(batch)
+  
+  def validation_step(self, batch, batch_idx):
+    return self._common_step(batch)
+
+  def test_step(self, batch, batch_idx):
+    return self._common_step(batch)
+
+  def predict_step(self, batch, batch_idx):
+    return self._common_step(batch)
+
+  
+  def configure_optimizers(self):
+
+    if self.optim_conf["name"] == "SGD":
+      
+      return torch.optim.SGD(
+        params=self.parameters(), lr=self.optim_conf["lr"]
+      )
+    
+    else:
+
+      raise ValueError(
+        f"Optimizer named {self.optim_conf['name']} not supported"
+      )
   
 
 def __main__():
