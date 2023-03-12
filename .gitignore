@@ -143,3 +143,5 @@ checkpoints/
 
 # Training configurations
 configs/
+
+*.jsonc
