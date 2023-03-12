@@ -22,10 +22,10 @@ class TwoPathCNN(nn.Module):
       in_channels=224, out_channels=out_channels, kernel_size=21
     )
 
-  def forward(self, x_global, x_local):
-    x_global = self.global_path_CNN.forward(x_global)
+  def forward(self, x):
+    x_global = self.global_path_CNN.forward(x)
     
-    x_local = self.local_path_CNN.forward(x_local)
+    x_local = self.local_path_CNN.forward(x)
 
     x = torch.concat((x_local, x_global), dim=1)
 
@@ -56,7 +56,7 @@ def __main__():
 
   x = torch.rand((128, 4, 33, 33))
 
-  two_path_CNN.forward(x_global=x, x_local=x)
+  two_path_CNN.forward(x)
 
 
 __main__()
