@@ -24,8 +24,8 @@ class GlobalLocalScalePatchesDataset(Dataset):
   def _create_item_dict(self, df_row):
 
     return {
-      "patch_global_scale": self.transforms(np.load(df_row["global_patch_path"])),
-      "patch_local_scale": self.transforms(np.load(df_row["local_patch_path"])),
+      "patch_global_scale": self.transforms(torch.tensor(np.load(df_row["global_patch_path"]))),
+      "patch_local_scale": self.transforms(torch.tensor(np.load(df_row["local_patch_path"]))),
       "patch_label_one_hot": torch.tensor(df_row["patch_label_one_hot"])
     }
   
@@ -69,16 +69,23 @@ class GlobalLocalScalePatchesDataset(Dataset):
 
 def __main__():
 
+  import json
+  
+  DF_PATH = "../data/BRATS2013_balanced/patch_metadata/train.json"
+  MEAN_STD_PATH = DF_PATH.replace(".json", "_mean_std.json")
+
+  mean_std_dict = json.load(open(MEAN_STD_PATH))
+
   ds = GlobalLocalScalePatchesDataset(
-    df_path="../data/BRATS2013_balanced/patch_metadata/train.json", 
-    load_data_in_memory=True,
+    df_path=DF_PATH,
+    load_data_in_memory=False,
     stage="train",
-    transforms=transforms.Compose(
-      [
-        transforms.ToTensor(),
-        transforms.Normalize(mean=0, std=1),
-      ]
-    )
+    transforms=transforms.Compose([
+      transforms.Normalize(
+        mean=torch.tensor(mean_std_dict["mean"]), 
+        std=torch.tensor(mean_std_dict["std"])
+      ),
+    ])
   )
 
   from torch.utils.data import DataLoader
