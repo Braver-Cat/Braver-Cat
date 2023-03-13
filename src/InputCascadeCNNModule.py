@@ -99,7 +99,7 @@ class InputCascadeCNNModule(pl.LightningModule):
   
   def on_fit_start(self):
 
-    self.logger.watch(self)
+    self.logger.watch(self, log_graph=False)
 
   def on_train_epoch_start(self):
 
@@ -109,7 +109,7 @@ class InputCascadeCNNModule(pl.LightningModule):
 
   def on_train_epoch_end(self):
 
-    epoch_exec_time = self.train_start_time - time.time()
+    epoch_exec_time = time.time() - self.train_start_time
     
     self.log("epoch/exec_time_seconds", epoch_exec_time)
 

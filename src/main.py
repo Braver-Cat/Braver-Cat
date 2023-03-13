@@ -10,8 +10,9 @@ from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import torch
-from pytorch_lightning.callbacks import RichProgressBar
+from pytorch_lightning.callbacks import RichProgressBar, ModelCheckpoint
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
+import os
 
 def get_conf():
   
@@ -45,6 +46,24 @@ def get_progress_bar():
       metrics="#9370DB",
     )
   )
+
+def make_dir_if_absent(dir):
+  if not os.path.exists(dir):
+    os.makedirs(dir)
+
+def get_checkpoint_callback(conf):
+
+  checkpoint_path = os.path.join(conf["checkpoint"]["path"], conf["run_id"])
+  make_dir_if_absent(checkpoint_path)
+
+  return ModelCheckpoint(
+    dirpath=checkpoint_path,
+    filename="ckp_{epoch:03d}",
+    save_last=True, save_top_k=conf["checkpoint"]["top_k"],
+    monitor="loss/val",
+    mode="min"
+  )
+
 
 def __main__():
 
@@ -94,6 +113,7 @@ def __main__():
     offline=conf["offline"],
     project=conf["project_name"]
   )
+  conf["run_id"] = wandb_logger.experiment.name
 
   wandb_logger.log_hyperparams(conf)
   
@@ -105,7 +125,7 @@ def __main__():
     limit_train_batches=conf["limit_train_batches"],
     limit_val_batches=conf["limit_val_batches"],
     limit_test_batches=conf["limit_test_batches"],
-    callbacks=[get_progress_bar()],
+    callbacks=[get_progress_bar(), get_checkpoint_callback(conf)],
     log_every_n_steps=1
 
   )
