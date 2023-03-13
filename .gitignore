@@ -139,7 +139,7 @@ resources/
 wandb/
 
 # Training checkpoints
-checkpoints/
+checkpoints*/
 
 # Training configurations
 configs/
