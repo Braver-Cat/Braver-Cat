@@ -50,6 +50,10 @@ class InputCascadeCNNModule(pl.LightningModule):
 
     if stage == "train" or stage == "val":
       self.log(f"loss/{stage}", loss, on_epoch=True, on_step=False, prog_bar=True)
+      # needed in order to save weights_only checkpoint, since PL does not
+      # allow to monitor two ModelCheckpoint with the same "monitor" and 
+      # "metric" values.
+      self.log(f"loss_{stage}", loss, on_epoch=True, on_step=False, prog_bar=True)
       self.log(f"acc/{stage}", acc, on_epoch=True, on_step=False, prog_bar=True)
     
     return loss
