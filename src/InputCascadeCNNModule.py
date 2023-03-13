@@ -5,6 +5,7 @@ from torch.nn import functional as F
 from torch.optim import *
 from torch.optim.lr_scheduler import *
 from torchmetrics import Accuracy
+import time
 
 class InputCascadeCNNModule(pl.LightningModule):
     
@@ -22,6 +23,8 @@ class InputCascadeCNNModule(pl.LightningModule):
     self.scheduler_conf = scheduler_conf
 
     self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
+
+    self.train_start_time = None
 
   def forward(self, x_global, x_local) -> torch.tensor:
 
@@ -93,6 +96,23 @@ class InputCascadeCNNModule(pl.LightningModule):
       "optimizer": optim, 
       "lr_scheduler": self._configure_schedulers(optim)
     }
+  
+  def on_fit_start(self):
+
+    self.logger.watch(self)
+
+  def on_train_epoch_start(self):
+
+    self.log("epoch/lr", self.lr_schedulers().get_last_lr()[0])
+
+    self.train_start_time = time.time()
+
+  def on_train_epoch_end(self):
+
+    epoch_exec_time = self.train_start_time - time.time()
+    
+    self.log("epoch/exec_time_seconds", epoch_exec_time)
+
   
 
 def __main__():

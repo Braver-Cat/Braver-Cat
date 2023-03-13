@@ -95,6 +95,8 @@ def __main__():
     project=conf["project_name"]
   )
 
+  wandb_logger.log_hyperparams(conf)
+  
   trainer = pl.Trainer(
     accelerator="gpu", devices="1",
     logger=wandb_logger,
