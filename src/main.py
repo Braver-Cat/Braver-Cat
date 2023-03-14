@@ -168,7 +168,7 @@ def __main__():
     offline=conf["offline"],
     project=conf["project_name"]
   )
-  conf["run_id"] = wandb_logger.experiment.name
+  conf["run_id"] = str(wandb_logger.experiment.name)
 
   wandb_logger.log_hyperparams(conf)
   
