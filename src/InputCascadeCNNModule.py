@@ -25,8 +25,7 @@ class InputCascadeCNNModule(pl.LightningModule):
 
     self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
 
-    if model_state_dict_path is not None:
-      self.load_state_dict(torch.load(model_state_dict_path)["state_dict"])
+    self.model_state_dict_path = model_state_dict_path
 
     self.train_start_time = None
 
@@ -106,6 +105,10 @@ class InputCascadeCNNModule(pl.LightningModule):
     }
   
   def on_fit_start(self):
+
+    if self.model_state_dict_path is not None:
+      print(f"Loading weights_only checkpoint from {self.model_state_dict_path}")
+      self.load_state_dict(torch.load(self.model_state_dict_path)["state_dict"])
 
     self.logger.watch(self, log_graph=False)
 
