@@ -32,9 +32,26 @@ def get_conf():
 def _validate_ckpt(conf):
   if conf["train_mode"] == "tl" and conf["tl"]["from_ckpt"] == None:
     raise Exception(TL_NO_CKPT_EX_MSG)
+  
+  conf["model_state_dict_path"] = None
+  conf["ckpt_path"] = None
+
+  # Whenever resuming from a checkpoint, Lightning pretends state dicts for 
+  # model weights, optim and scheduler. 
+  # It does not allow to load model wights only, which we need in TL from scratch
+  # So, to differenciate the cases, we will use two variables throughout the code.
+  #
+  # model_state_dict_path --> we want to load just the model state dict
+  # ckpt_path --> we are ok with model, scheduler and optim state dicts
+  if is_tl_from_scratch(conf):
+    conf["model_state_dict_path"] = conf["tl"]["from_ckpt"]
+  else:
+    conf["ckpt_path"] = conf[conf["train_mode"]]["from_ckpt"]
+
+  return conf
 
 def validate_conf(conf):
-  _validate_ckpt(conf)
+  conf = _validate_ckpt(conf)
 
   if conf[conf["train_mode"]]["from_ckpt"] is not None:
     ckpt = torch.load(conf[conf["train_mode"]]["from_ckpt"])
@@ -134,7 +151,7 @@ def __main__():
     optim_conf=conf["optim_conf"],
     scheduler_conf=conf["scheduler_conf"],
     num_classes=conf["data"]["num_classes"],
-    is_tl_from_scratch=is_tl_from_scratch(conf)
+    model_state_dict_path=conf["model_state_dict_path"],
   )
 
   mean, std = load_mean_std(conf["data"]["mean_std_path"])
@@ -169,7 +186,7 @@ def __main__():
 
   trainer.fit(
     model=input_cascade_CNN, datamodule=datamodule,
-    ckpt_path=conf[conf["train_mode"]]["from_ckpt"]
+    ckpt_path=conf["ckpt_path"]
   )
 
 if __name__ == "__main__":

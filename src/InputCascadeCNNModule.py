@@ -12,7 +12,7 @@ class InputCascadeCNNModule(pl.LightningModule):
   def __init__(
       self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN,
       optim_conf: dict, scheduler_conf: dict, num_classes: int,
-      is_tl_from_scratch: bool
+      model_state_dict_path=None
     ):
     
     super().__init__()
@@ -25,7 +25,8 @@ class InputCascadeCNNModule(pl.LightningModule):
 
     self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
 
-    self.is_tl_from_scratch = is_tl_from_scratch
+    if model_state_dict_path is not None:
+      self.load_state_dict(torch.load(model_state_dict_path)["state_dict"])
 
     self.train_start_time = None
 
