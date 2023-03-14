@@ -11,7 +11,8 @@ class InputCascadeCNNModule(pl.LightningModule):
     
   def __init__(
       self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN,
-      optim_conf: dict, scheduler_conf: dict, num_classes: int
+      optim_conf: dict, scheduler_conf: dict, num_classes: int,
+      is_tl_from_scratch: bool
     ):
     
     super().__init__()
@@ -23,6 +24,8 @@ class InputCascadeCNNModule(pl.LightningModule):
     self.scheduler_conf = scheduler_conf
 
     self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
+
+    self.is_tl_from_scratch = is_tl_from_scratch
 
     self.train_start_time = None
 

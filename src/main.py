@@ -16,26 +16,8 @@ from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTh
 import os
 from rich import print
 
-E2E_WRONG_CKPT_EX_MSG = "Resuming E2E training from checkpoint requires the " \
-  "checkpoint to have Optimizer and Scheduler state dicts, but it "\
-  "has the following keys: \n"
-
-E2E_WRONG_CKPT_WARN_MSG = "Trying to resume E2E " \
-  "starting from a checkpoint that contains \"weights_only\" in " \
-  "its name.\n" \
-  "Make sure to have selected the right checkpoint for TL from scratch!" 
-
-TL_WRONG_CKPT_WARN_MSG = "Trying to perform Transfer Learning from scratch " \
-  "starting from a checkpoint that does not contain \"weights_only\" in " \
-  "its name.\n" \
-  "Make sure to have selected the right checkpoint for TL from scratch!" 
-
 TL_NO_CKPT_EX_MSG = "Performing Transfer Learning requires a checkpoint, " \
   "but None has been given."
-
-TL_WRONG_CKPT_EX_MSG = "Performing Transfer Learning from scratch starting " \
-  "from a checkpoint that stores Optimizer and Scheduler state dicts NOT " \
-  "allowed.\nSelect a \"weights_only\" checkpoint"
 
 def get_conf():
   
@@ -48,35 +30,8 @@ def get_conf():
   return pyjson5.load(open(arg_parser.parse_args().conf_file))
 
 def _validate_ckpt(conf):
-
-  notable_keys = ['optimizer_states', 'lr_schedulers']
-
-  if conf["train_mode"] == "e2e" and conf["e2e"]["from_ckpt"] is not None:
-    
-    ckpt = torch.load(conf[conf["train_mode"]]["from_ckpt"])
-    notable_keys_in_ckpt = [x in ckpt.keys() for x in notable_keys]
-    
-    if "weights_only" in conf["e2e"]["from_ckpt"]:
-      warn(E2E_WRONG_CKPT_WARN_MSG)
-    
-    if not all(notable_keys_in_ckpt):
-      raise Exception(E2E_WRONG_CKPT_EX_MSG + str(ckpt.keys()))
-
-  if conf["train_mode"] == "tl":
-
-    if conf["tl"]["from_ckpt"] == None:
-      raise Exception(TL_NO_CKPT_EX_MSG)
-    
-    ckpt = torch.load(conf[conf["train_mode"]]["from_ckpt"])
-    notable_keys_in_ckpt = [x in ckpt.keys() for x in notable_keys]
-    
-    if conf["tl"]["from_scratch"] == True:
-
-      if "weights_only" not in conf["tl"]["from_ckpt"]:
-        warn(TL_WRONG_CKPT_WARN_MSG)
-
-      if any(notable_keys_in_ckpt):
-        raise Exception(TL_WRONG_CKPT_EX_MSG)
+  if conf["train_mode"] == "tl" and conf["tl"]["from_ckpt"] == None:
+    raise Exception(TL_NO_CKPT_EX_MSG)
 
 def validate_conf(conf):
   _validate_ckpt(conf)
@@ -140,11 +95,16 @@ def get_ckpt_callback(conf):
   ]
 
 
+def is_tl_from_scratch(conf):
+  if conf["train_mode"] == "tl":
+    return conf["tl"]["from_scratch"]
+  
+  return False
+
 def __main__():
 
   conf = get_conf()
   conf = validate_conf(conf)
-  print(conf["max_epochs"])
 
   global_scale_CNN = TwoPathCNN(
     global_path_CNN=GlobalPathCNN(
@@ -173,7 +133,8 @@ def __main__():
     local_scale_CNN=local_scale_CNN,
     optim_conf=conf["optim_conf"],
     scheduler_conf=conf["scheduler_conf"],
-    num_classes=conf["data"]["num_classes"]
+    num_classes=conf["data"]["num_classes"],
+    is_tl_from_scratch=is_tl_from_scratch(conf)
   )
 
   mean, std = load_mean_std(conf["data"]["mean_std_path"])
