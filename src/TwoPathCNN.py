@@ -34,6 +34,12 @@ class TwoPathCNN(nn.Module):
     x = nn.functional.softmax(x, dim=1)
 
     return x
+  
+  def _freeze_layers_tl(self):
+    self.global_path_CNN.freeze()
+    self.local_path_CNN.freeze()
+
+    # keeping just the concat layer unfrozen
 
 
 

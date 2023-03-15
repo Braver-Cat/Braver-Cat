@@ -11,7 +11,7 @@ from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import torch
-from pytorch_lightning.callbacks import RichProgressBar, ModelCheckpoint
+from pytorch_lightning.callbacks import RichProgressBar, ModelCheckpoint, ModelSummary
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 import os
 from rich import print
@@ -151,6 +151,7 @@ def __main__():
     optim_conf=conf["optim_conf"],
     scheduler_conf=conf["scheduler_conf"],
     num_classes=conf["data"]["num_classes"],
+    is_tl=conf["train_mode"] == "tl",
     model_state_dict_path=conf["model_state_dict_path"],
   )
 
@@ -181,7 +182,7 @@ def __main__():
     limit_train_batches=conf["limit_train_batches"],
     limit_val_batches=conf["limit_val_batches"],
     limit_test_batches=conf["limit_test_batches"],
-    callbacks=[get_progress_bar(), *get_ckpt_callback(conf)],
+    callbacks=[get_progress_bar(), *get_ckpt_callback(conf), ModelSummary()],
     log_every_n_steps=1,
   )
 

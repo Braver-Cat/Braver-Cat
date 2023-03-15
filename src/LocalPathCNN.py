@@ -38,3 +38,7 @@ class LocalPathCNN(nn.Module):
     x = self.max_pool_1(x)
 
     return x
+  
+  def freeze(self):
+    for param in self.parameters():
+      param.requires_grad = False

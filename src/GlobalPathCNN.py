@@ -23,3 +23,7 @@ class GlobalPathCNN(nn.Module):
     x = self.dropout(x)
 
     return x
+  
+  def freeze(self):
+    for param in self.parameters():
+      param.requires_grad = False

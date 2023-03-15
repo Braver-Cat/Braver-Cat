@@ -12,7 +12,7 @@ class InputCascadeCNNModule(pl.LightningModule):
   def __init__(
       self, global_scale_CNN: TwoPathCNN, local_scale_CNN: TwoPathCNN,
       optim_conf: dict, scheduler_conf: dict, num_classes: int,
-      model_state_dict_path=None
+      is_tl: bool, model_state_dict_path=None
     ):
     
     super().__init__()
@@ -25,9 +25,12 @@ class InputCascadeCNNModule(pl.LightningModule):
 
     self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
 
+    self.is_tl = is_tl
+
     self.model_state_dict_path = model_state_dict_path
 
     self.train_start_time = None
+    self.model_summary_shown = False
 
   def forward(self, x_global, x_local) -> torch.tensor:
 
@@ -103,14 +106,18 @@ class InputCascadeCNNModule(pl.LightningModule):
       "optimizer": optim, 
       "lr_scheduler": self._configure_schedulers(optim)
     }
-  
-  def on_fit_start(self):
 
-    if self.model_state_dict_path is not None:
-      print(f"Loading weights_only checkpoint from {self.model_state_dict_path}")
-      self.load_state_dict(torch.load(self.model_state_dict_path)["state_dict"])
+  def setup(self, stage):
+    if stage == "fit":
 
-    self.logger.watch(self, log_graph=False)
+      if self.model_state_dict_path is not None:
+        print(f"Loading weights_only checkpoint from {self.model_state_dict_path}")
+        self.load_state_dict(torch.load(self.model_state_dict_path)["state_dict"])
+
+      if self.is_tl: 
+        self._freeze_layers_tl()
+
+      self.logger.watch(self, log_graph=False)
 
   def on_train_epoch_start(self):
 
@@ -124,6 +131,9 @@ class InputCascadeCNNModule(pl.LightningModule):
     
     self.log("epoch/exec_time_seconds", epoch_exec_time)
 
+  def _freeze_layers_tl(self):
+    self.global_scale_CNN._freeze_layers_tl()
+    self.local_scale_CNN._freeze_layers_tl()
   
 
 def __main__():
