@@ -158,7 +158,7 @@ def __main__():
 
   datamodule = GlobalLocalScalePatchesDataModule(
     df_path_dict=conf["data"]["df_path_dict"],
-    load_data_in_memory=False,
+    load_data_in_memory=conf["data"]["load_data_in_memory"],
     batch_size=conf["batch_size"],
     num_workers=conf["num_workers"],
     transforms=transforms.Compose( [transforms.Normalize(mean=mean, std=std)] )

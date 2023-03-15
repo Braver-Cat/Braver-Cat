@@ -52,7 +52,8 @@ class GlobalLocalScalePatchesDataset(Dataset):
     )
 
     pb_load_data_task = pb.add_task(
-      "[bold #008080]Loading data in memory...", total=self.__len__()
+      f"[bold #008080]Loading data in memory ({self.stage} split)", 
+      total=self.__len__()
     ) 
 
     pb.start()
