@@ -166,7 +166,8 @@ def __main__():
 
   wandb_logger = WandbLogger(
     offline=conf["offline"],
-    project=conf["project_name"]
+    project=conf["project_name"], 
+    dir=conf["wandb_dir"], save_dir=conf["wandb_dir"]
   )
   conf["run_id"] = str(wandb_logger.experiment.name)
 
