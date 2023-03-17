@@ -95,9 +95,25 @@ def get_ckpt_callback(conf):
   return [ 
     ModelCheckpoint(
       dirpath=checkpoint_path,
-      filename="ckp_{epoch:03d}",
+      filename="ckp_loss_val_epoch_{epoch:03d}",
       save_last=True, save_top_k=conf["save_ckpt"]["top_k"],
       monitor="loss/val",
+      mode="min"
+    ),
+    
+    ModelCheckpoint(
+      dirpath=checkpoint_path,
+      filename="ckp_loss_train_epoch_{epoch:03d}",
+      save_last=True, save_top_k=conf["save_ckpt"]["top_k"],
+      monitor="loss/train",
+      mode="min"
+    ),
+    
+    ModelCheckpoint(
+      dirpath=checkpoint_path,
+      filename="ckp_acc_train_epoch_{epoch:03d}",
+      save_last=True, save_top_k=conf["save_ckpt"]["top_k"],
+      monitor="acc/train",
       mode="min"
     ),
     
