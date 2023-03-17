@@ -119,11 +119,27 @@ def get_ckpt_callback(conf):
     
     ModelCheckpoint(
       dirpath=checkpoint_path,
-      filename="ckp_{epoch:03d}_weights_only",
+      filename="ckp_loss_val_epoch_{epoch:03d}_weights_only",
       save_last=True, save_top_k=conf["save_ckpt"]["top_k"],
       monitor="loss_val",
       mode="min",
       save_weights_only=True
+    ),
+    
+    ModelCheckpoint(
+      dirpath=checkpoint_path,
+      filename="ckp_loss_train_epoch_{epoch:03d}",
+      save_last=True, save_top_k=conf["save_ckpt"]["top_k"],
+      monitor="loss/train",
+      mode="min"
+    ),
+    
+    ModelCheckpoint(
+      dirpath=checkpoint_path,
+      filename="ckp_acc_train_epoch_{epoch:03d}",
+      save_last=True, save_top_k=conf["save_ckpt"]["top_k"],
+      monitor="acc/train",
+      mode="min",
     ),
   ]
 
@@ -190,7 +206,7 @@ def __main__():
   conf["run_id"] = str(wandb_logger.experiment.name)
 
   wandb_logger.log_hyperparams(conf)
-  
+
   trainer = pl.Trainer(
     accelerator="gpu", devices="1",
     logger=wandb_logger,
@@ -201,6 +217,7 @@ def __main__():
     limit_test_batches=conf["limit_test_batches"],
     callbacks=[get_progress_bar(), *get_ckpt_callback(conf), ModelSummary()],
     log_every_n_steps=1,
+    num_sanity_val_steps=0
   )
 
   trainer.fit(
