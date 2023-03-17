@@ -162,7 +162,8 @@ def __main__():
     load_data_in_memory=conf["data"]["load_data_in_memory"],
     batch_size=conf["batch_size"],
     num_workers=conf["num_workers"],
-    transforms=transforms.Compose( [transforms.Normalize(mean=mean, std=std)] )
+    transforms=transforms.Compose( [transforms.Normalize(mean=mean, std=std)] ),
+    is_old=conf["data"]["is_old"]
   )
 
   wandb_logger = WandbLogger(

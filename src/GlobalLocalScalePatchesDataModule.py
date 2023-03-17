@@ -8,7 +8,7 @@ class GlobalLocalScalePatchesDataModule(pl.LightningDataModule):
   def __init__(
     self, df_path_dict: dict, load_data_in_memory: bool, 
     batch_size: int, num_workers: int,
-    transforms
+    transforms, is_old
   ):
     
     super().__init__()
@@ -19,6 +19,7 @@ class GlobalLocalScalePatchesDataModule(pl.LightningDataModule):
     self.batch_size = batch_size
 
     self.transforms = transforms
+    self.is_old = is_old
 
     # self.train, self.val, self.test, self.predict = None, None, None, None
 
@@ -28,7 +29,7 @@ class GlobalLocalScalePatchesDataModule(pl.LightningDataModule):
       df_path=self.df_path_dict[stage],
       stage=stage,
       load_data_in_memory=self.load_data_in_memory,
-      transforms=self.transforms 
+      transforms=self.transforms, is_old=self.is_old
     )
 
   def setup(self, stage: str):
@@ -52,22 +53,22 @@ class GlobalLocalScalePatchesDataModule(pl.LightningDataModule):
 
   def train_dataloader(self):
     return DataLoader(
-      self.train, batch_size=self.batch_size, num_workers=self.num_workers
+      self.train, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True
     )
 
   def val_dataloader(self):
     return DataLoader(
-      self.val, batch_size=self.batch_size, num_workers=self.num_workers
+      self.val, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True
     )
 
   def test_dataloader(self):
     return DataLoader(
-      self.test, batch_size=self.batch_size, num_workers=self.num_workers
+      self.test, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True
     )
 
   def predict_dataloader(self):
     return DataLoader(
-      self.predict, batch_size=self.batch_size, num_workers=self.num_workers
+      self.predict, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True
     )
   
 
@@ -78,9 +79,9 @@ def __main__():
 
   datamodule = GlobalLocalScalePatchesDataModule(
     df_path_dict={
-      "train": "../data/BRATS2013_balanced/patch_metadata/train.json",
-      "val": "../data/BRATS2013_balanced/patch_metadata/val.json",
-      "test": "../data/BRATS2013_balanced/patch_metadata/test.json",
+      "train": "../data_old/BRATS2013_patches_65_balanced/0/train_labels_df_one_hot.json",
+      "val": "../data_old/BRATS2013_patches_33_balanced/0/val_labels_df_one_hot.json",
+      "test": "../data_old/BRATS2013_patches_33_balanced/0/test_labels_df_one_hot.json"
     },
     load_data_in_memory=False,
     batch_size=64,
@@ -89,7 +90,8 @@ def __main__():
       transforms.Normalize(
         mean=torch.zeros((4,1,1)), 
         std=torch.ones((4,1,1)))
-    ])
+    ]),
+    is_old=True
   )
 
   datamodule.setup(stage="fit")

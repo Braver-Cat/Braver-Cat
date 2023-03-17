@@ -8,7 +8,7 @@ from torchvision import transforms
 class GlobalLocalScalePatchesDataset(Dataset):
   
   def __init__(
-    self, df_path, stage, load_data_in_memory, transforms
+    self, df_path, stage, load_data_in_memory, transforms, is_old
   ):
 
     self.df = pd.read_json(df_path)
@@ -16,18 +16,25 @@ class GlobalLocalScalePatchesDataset(Dataset):
     self.transforms = transforms
     self.load_data_in_memory = load_data_in_memory
     self.data = self.load_data() if self.load_data_in_memory else None
+    self.is_old = is_old
     
 
   def __len__(self):
     return len(self.df.index)
   
   def _create_item_dict(self, df_row):
+    if self.is_old:
+      global_patch_path = df_row["patch_65_x_65_img_path"].replace("/data", "/data_old") + ".npy"
+      local_patch_path = global_patch_path.replace("patches_65_", "patches_33_")
+    else:
+      global_patch_path = df_row["global_patch_path"]
+      local_patch_path = df_row["local_patch_path"]
 
     return {
-      "patch_global_scale": self.transforms(torch.tensor(np.load(df_row["global_patch_path"]))),
-      "patch_local_scale": self.transforms(torch.tensor(np.load(df_row["local_patch_path"]))),
-      "patch_label": torch.tensor(df_row["patch_label"]),
-      "patch_label_one_hot": torch.tensor(df_row["patch_label_one_hot"])
+      "patch_global_scale": self.transforms(torch.tensor(np.load(global_patch_path), dtype=torch.float32)),
+      "patch_local_scale": self.transforms(torch.tensor(np.load(local_patch_path), dtype=torch.float32)),
+      "patch_label": torch.tensor(df_row["patch_label"], dtype=torch.float32),
+      "patch_label_one_hot": torch.tensor(df_row["patch_label_one_hot"], dtype=torch.float32)
     }
   
   def __getitem__(self, idx):
