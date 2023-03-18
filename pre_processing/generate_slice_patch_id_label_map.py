@@ -52,16 +52,22 @@ for split in split_sizes.keys():
 
   for slice_path in slice_paths:
 
-    label_np = np.squeeze(np.load(f"{slice_path}/label.npy"), 0)
+    label_np = np.load(f"{slice_path}/label.npy")
+    img = np.load(f"{slice_path}/img.npy")
+    arr_stack = np.stack((*label_np, *img), axis=-1)
     
-    label_patches = extract_patches_2d(image=label_np, patch_size=PATCH_SHAPE)
+    patches = extract_patches_2d(image=arr_stack, patch_size=PATCH_SHAPE)
 
     pb.reset(pb_patch_task)
-    pb.update(pb_patch_task, total=label_patches.shape[0])
+    pb.update(pb_patch_task, total=patches.shape[0])
 
-    for patch_id in range(label_patches.shape[0]):
+    for patch_id, patch in enumerate(patches):
 
-      label = round(label_patches[patch_id, PATCH_SIZE//2, PATCH_SIZE//2])
+      label = round(patch[PATCH_SIZE//2, PATCH_SIZE//2, 0])
+      img_patch = patch[:,:,1:]
+
+      if img_patch.sum() == 0:
+        continue
 
       split_df_list.append(
         {
