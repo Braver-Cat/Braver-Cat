@@ -7,6 +7,7 @@ import os
 import json
 
 DF_PATH = "../data/BRATS2013_balanced/patch_metadata/train.json"
+IS_OLD = False
 
 ds = GlobalLocalScalePatchesDataset(
   df_path=DF_PATH, 
@@ -14,7 +15,8 @@ ds = GlobalLocalScalePatchesDataset(
   stage="train",
   transforms=transforms.Compose([
     transforms.Normalize(mean=0, std=1),
-  ])
+  ]),
+  is_old=IS_OLD
 )
 
 entries = []
