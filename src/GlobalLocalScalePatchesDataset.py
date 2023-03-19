@@ -12,11 +12,11 @@ class GlobalLocalScalePatchesDataset(Dataset):
   ):
 
     self.df = pd.read_json(df_path)
+    self.is_old = is_old
     self.stage = stage
     self.transforms = transforms
     self.load_data_in_memory = load_data_in_memory
     self.data = self.load_data() if self.load_data_in_memory else None
-    self.is_old = is_old
     
 
   def __len__(self):
